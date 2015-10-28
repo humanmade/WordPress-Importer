@@ -1684,6 +1684,10 @@ class WXR_Importer extends WP_Importer {
 				}
 			}
 
+			if ( get_post_type( $post_id ) === 'nav_menu_item' ) {
+				$this->post_process_menu_item( $post_id );
+			}
+
 			// Do we have updates to make?
 			if ( empty( $data ) ) {
 				$this->logger->debug( sprintf(
@@ -1712,6 +1716,52 @@ class WXR_Importer extends WP_Importer {
 			delete_post_meta( $post_id, '_wxr_import_has_attachment_refs' );
 		}
 	}
+
+	protected function post_process_menu_item( $post_id ) {
+		$menu_object_id = get_post_meta( $post_id, '_wxr_import_menu_item', true );
+		if ( empty( $menu_object_id ) ) {
+			// No processing needed!
+			return;
+		}
+
+		$menu_item_type = get_post_meta( $post_id, '_menu_item_type', true );
+		switch ( $menu_item_type ) {
+			case 'taxonomy':
+				if ( isset( $this->mapping['term_id'][ $menu_object_id ] ) ) {
+					$menu_object = $this->mapping['term_id'][ $menu_object_id ];
+				}
+				break;
+
+			case 'post_type':
+				if ( isset( $this->mapping['post'][ $menu_object_id ] ) ) {
+					$menu_object = $this->mapping['post'][ $menu_object_id ];
+				}
+				break;
+
+			default:
+				// Cannot handle this.
+				return;
+		}
+
+		if ( ! empty( $menu_object ) ) {
+			update_post_meta( $post_id, '_menu_item_object_id', wp_slash( $menu_object ) );
+		} else {
+			$this->logger->warning( sprintf(
+				__( 'Could not find the menu object for "%s" (post #%d)', 'wordpress-importer' ),
+				get_the_title( $post_id ),
+				$post_id
+			) );
+			$this->logger->debug( sprintf(
+				__( 'Post %d was imported with object "%d" of type "%s", but could not be found', 'wordpress-importer' ),
+				$post_id,
+				$menu_object_id,
+				$menu_item_type
+			) );
+		}
+
+		delete_post_meta( $post_id, '_wxr_import_menu_item' );
+	}
+
 
 	protected function post_process_comments( $todo ) {
 		foreach ( $todo as $comment_id => $_ ) {
