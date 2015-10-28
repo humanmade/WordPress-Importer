@@ -86,6 +86,7 @@ class WXR_Importer extends WP_Importer {
 
 		$this->mapping = $empty_types;
 		$this->mapping['user_slug'] = array();
+		$this->mapping['term_id'] = array();
 		$this->requires_remapping = $empty_types;
 		$this->exists = $empty_types;
 
@@ -823,8 +824,12 @@ class WXR_Importer extends WP_Importer {
 		$requires_remapping = false;
 		switch ( $item_type ) {
 			case 'taxonomy':
-				// TODO: we need the ID here...
-				$this->logger->debug( 'Term links in menus are currently unsupported' );
+				if ( isset( $this->mapping['term_id'][ $original_object_id ] ) ) {
+					$object_id = $this->mapping['term_id'][ $original_object_id ];
+				} else {
+					add_post_meta( $post_id, '_wxr_import_menu_item', wp_slash( $original_object_id ) );
+					$requires_remapping = true;
+				}
 				break;
 
 			case 'post_type':
@@ -1470,6 +1475,7 @@ class WXR_Importer extends WP_Importer {
 		$mapping_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
 		if ( $existing = $this->term_exists( $data ) ) {
 			$this->mapping['term'][ $mapping_key ] = $existing;
+			$this->mapping['term_id'][ $original_id ] = $existing;
 			return false;
 		}
 
@@ -1523,6 +1529,7 @@ class WXR_Importer extends WP_Importer {
 		$term_id = $result['term_id'];
 
 		$this->mapping['term'][ $mapping_key ] = $term_id;
+		$this->mapping['term_id'][ $original_id ] = $term_id;
 
 		$this->logger->info( sprintf(
 			__( 'Imported "%s" (%s)', 'wordpress-importer' ),
