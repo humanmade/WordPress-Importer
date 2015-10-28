@@ -626,12 +626,6 @@ class WXR_Importer extends WP_Importer {
 			return;
 		}
 
-		if ( 'nav_menu_item' == $data['post_type'] ) {
-			// TODO: enable menu importing
-			// return $this->process_menu_item( $data );
-			return false;
-		}
-
 		$post_type_object = get_post_type_object( $data['post_type'] );
 
 		// Is this type even valid?
@@ -791,6 +785,21 @@ class WXR_Importer extends WP_Importer {
 
 		$this->process_comments( $comments, $post_id, $data );
 		$this->process_post_meta( $meta, $post_id, $data );
+
+		if ( 'nav_menu_item' === $data['post_type'] ) {
+			$this->process_menu_item_meta( $post_id, $data, $meta );
+		}
+
+		/**
+		 * Post processing completed.
+		 *
+		 * @param int $post_id New post ID.
+		 * @param array $data Raw data imported for the post.
+		 * @param array $meta Raw meta data, already processed by {@see process_post_meta}.
+		 * @param array $comments Raw comment data, already processed by {@see process_comments}.
+		 * @param array $terms Raw term data, already processed.
+		 */
+		do_action( 'wxr_importer.processed.post', $post_id, $data, $meta, $comments, $terms );
 	}
 
 	/**
@@ -803,82 +812,53 @@ class WXR_Importer extends WP_Importer {
 	 *
 	 * @param array $item Menu item details from WXR file
 	 */
-	protected function process_menu_item( $item ) {
-		// skip draft, orphaned menu items
-		if ( 'draft' == $item['post_status'] )
-			return;
+	protected function process_menu_item_meta( $post_id, $data, $meta ) {
 
-		$menu_slug = false;
-		if ( isset($item['terms']) ) {
-			// loop through terms, assume first nav_menu term is correct menu
-			foreach ( $item['terms'] as $term ) {
-				if ( 'nav_menu' == $term['domain'] ) {
-					$menu_slug = $term['slug'];
-					break;
+		$item_type = get_post_meta( $post_id, '_menu_item_type', true );
+		$original_object_id = get_post_meta( $post_id, '_menu_item_object_id', true );
+		$object_id = null;
+
+		$this->logger->debug( sprintf( 'Processing menu item %s', $item_type ) );
+
+		$requires_remapping = false;
+		switch ( $item_type ) {
+			case 'taxonomy':
+				// TODO: we need the ID here...
+				$this->logger->debug( 'Term links in menus are currently unsupported' );
+				break;
+
+			case 'post_type':
+				if ( isset( $this->mapping['post'][ $original_object_id ] ) ) {
+					$object_id = $this->mapping['post'][ $original_object_id ];
+				} else {
+					add_post_meta( $post_id, '_wxr_import_menu_item', wp_slash( $original_object_id ) );
+					$requires_remapping = true;
 				}
-			}
+				break;
+
+			case 'custom':
+				// Custom refers to itself, wonderfully easy.
+				$object_id = $post_id;
+				break;
+
+			default:
+				// associated object is missing or not imported yet, we'll retry later
+				$this->missing_menu_items[] = $item;
+				$this->logger->debug('Unknown menu item type');
+				break;
 		}
 
-		// no nav_menu term associated with this menu item
-		if ( ! $menu_slug ) {
-			_e( 'Menu item skipped due to missing menu slug', 'wordpress-importer' );
-			echo '<br />';
+		if ( $requires_remapping ) {
+			$this->requires_remapping['post'][ $post_id ] = true;
+		}
+
+		if ( empty( $object_id ) ) {
+			// Nothing needed here.
 			return;
 		}
 
-		$menu_id = term_exists( $menu_slug, 'nav_menu' );
-		if ( ! $menu_id ) {
-			printf( __( 'Menu item skipped due to invalid menu slug: %s', 'wordpress-importer' ), esc_html( $menu_slug ) );
-			echo '<br />';
-			return;
-		} else {
-			$menu_id = is_array( $menu_id ) ? $menu_id['term_id'] : $menu_id;
-		}
-
-		foreach ( $item['postmeta'] as $meta )
-			$$meta['key'] = $meta['value'];
-
-		if ( 'taxonomy' == $_menu_item_type && isset( $this->processed_terms[intval($_menu_item_object_id)] ) ) {
-			$_menu_item_object_id = $this->processed_terms[intval($_menu_item_object_id)];
-		} else if ( 'post_type' == $_menu_item_type && isset( $this->processed_posts[intval($_menu_item_object_id)] ) ) {
-			$_menu_item_object_id = $this->processed_posts[intval($_menu_item_object_id)];
-		} else if ( 'custom' != $_menu_item_type ) {
-			// associated object is missing or not imported yet, we'll retry later
-			$this->missing_menu_items[] = $item;
-			return;
-		}
-
-		if ( isset( $this->processed_menu_items[intval($_menu_item_menu_item_parent)] ) ) {
-			$_menu_item_menu_item_parent = $this->processed_menu_items[intval($_menu_item_menu_item_parent)];
-		} else if ( $_menu_item_menu_item_parent ) {
-			$this->menu_item_orphans[intval($item['post_id'])] = (int) $_menu_item_menu_item_parent;
-			$_menu_item_menu_item_parent = 0;
-		}
-
-		// wp_update_nav_menu_item expects CSS classes as a space separated string
-		$_menu_item_classes = maybe_unserialize( $_menu_item_classes );
-		if ( is_array( $_menu_item_classes ) )
-			$_menu_item_classes = implode( ' ', $_menu_item_classes );
-
-		$args = array(
-			'menu-item-object-id' => $_menu_item_object_id,
-			'menu-item-object' => $_menu_item_object,
-			'menu-item-parent-id' => $_menu_item_menu_item_parent,
-			'menu-item-position' => intval( $item['menu_order'] ),
-			'menu-item-type' => $_menu_item_type,
-			'menu-item-title' => $item['post_title'],
-			'menu-item-url' => $_menu_item_url,
-			'menu-item-description' => $item['post_content'],
-			'menu-item-attr-title' => $item['post_excerpt'],
-			'menu-item-target' => $_menu_item_target,
-			'menu-item-classes' => $_menu_item_classes,
-			'menu-item-xfn' => $_menu_item_xfn,
-			'menu-item-status' => $item['status']
-		);
-
-		$id = wp_update_nav_menu_item( $menu_id, 0, $args );
-		if ( $id && ! is_wp_error( $id ) )
-			$this->processed_menu_items[intval($item['post_id'])] = (int) $id;
+		$this->logger->debug( sprintf( 'Menu item %d mapped to %d', $original_object_id, $object_id ) );
+		update_post_meta( $post_id, '_menu_item_object_id', wp_slash( $object_id ) );
 	}
 
 	/**
