@@ -12,7 +12,7 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 
 if ( ! class_exists( 'WP_Importer' ) ) {
 	defined( 'WP_LOAD_IMPORTERS' ) || define( 'WP_LOAD_IMPORTERS', true );
-	require dirname( __DIR__ ) . '/wordpress-importer/wordpress-importer.php';
+	require ABSPATH . '/wp-admin/includes/class-wp-importer.php';
 }
 
 require dirname( __FILE__ ) . '/class-logger.php';
