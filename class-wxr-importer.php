@@ -1928,17 +1928,31 @@ class WXR_Importer extends WP_Importer {
 		// Constant-time lookup if we prefilled
 		$exists_key = $data['guid'];
 
+		$exists = null;
+
 		if ( $this->options['prefill_existing_posts'] ) {
-			return isset( $this->exists['post'][ $exists_key ] ) ? $this->exists['post'][ $exists_key ] : false;
+			$exists = isset( $this->exists['post'][ $exists_key ] ) ? $this->exists['post'][ $exists_key ] : false;
+		} else if ( isset( $this->exists['post'][ $exists_key ] ) ) {
+			// No prefilling, but might have already handled it
+			$exists = $this->exists['post'][ $exists_key ];
+		} else {
+			// Still nothing, try post_exists, and cache it
+			$exists = post_exists( $data['post_title'], $data['post_content'], $data['post_date'] );
 		}
 
-		// No prefilling, but might have already handled it
-		if ( isset( $this->exists['post'][ $exists_key ] ) ) {
-			return $this->exists['post'][ $exists_key ];
-		}
+		/**
+		 * Filter ID of the existing post corresponding to post currently importing.
+		 *
+		 * Return 0 to force the post to be imported. Filter the ID to be something else
+		 * to override which existing post is mapped to the imported post.
+		 *
+		 * @see post_exists()
+		 *
+		 * @param int   $post_exists  Post ID, or 0 if post did not exist.
+		 * @param array $data         The post array to be inserted.
+		 */
+		$exists = apply_filters( 'wp_import_existing_post', $exists, $data );
 
-		// Still nothing, try post_exists, and cache it
-		$exists = post_exists( $data['post_title'], $data['post_content'], $data['post_date'] );
 		$this->exists['post'][ $exists_key ] = $exists;
 
 		return $exists;
