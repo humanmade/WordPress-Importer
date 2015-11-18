@@ -5,6 +5,16 @@ Fast, lightweight, consistent. Pick three. :palm_tree: :sunglasses:
 
 [WordPress Importer]: https://wordpress.org/plugins/wordpress-importer/
 
+## How do I use it?
+
+Currently, there's no UI in the Dashboard, so you'll need to run it via WP-CLI. Simply activate the plugin, then run:
+
+```sh
+wp wxr-importer import import-file.xml
+```
+
+If you want to get more info, you can set the `--verbose` flag; run `wp help wxr-importer import` to discover what you can do.
+
 ## Current Status
 
 The current major items are currently missing or suboptimal in the Importer:
