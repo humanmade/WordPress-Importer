@@ -1,7 +1,7 @@
 # WordPress Importer Redux
 This repository contains the new version of the [WordPress Importer][] currently in development. [Learn more about the rewrite](https://make.wordpress.org/core/?p=15550).
 
-Fast, lightweight, consistent. Pick three.
+Fast, lightweight, consistent. Pick three. :palm_tree: :sunglasses:
 
 [WordPress Importer]: https://wordpress.org/plugins/wordpress-importer/
 
@@ -9,7 +9,7 @@ Fast, lightweight, consistent. Pick three.
 
 The current major items are currently missing or suboptimal in the Importer:
 
-* **Web UI** [#1](https://github.com/humanmade/WordPress-Importer/issues/1): Right now, there's essentially *no* web interface for the importer. This sucks.
+* **Web UI** ([#1](https://github.com/humanmade/WordPress-Importer/issues/1)): Right now, there's essentially *no* web interface for the importer. This sucks.
 
 * **Automatic Testing**: There's no unit tests. Boooooo.
 
