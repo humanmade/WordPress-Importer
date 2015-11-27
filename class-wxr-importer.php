@@ -1735,7 +1735,7 @@ class WXR_Importer extends WP_Importer {
 
 		$this->mapping['term'][ $mapping_key ] = $term_id;
 		$this->mapping['term_id'][ $original_id ] = $term_id;
-
+	
 		$this->logger->info( sprintf(
 			__( 'Imported "%s" (%s)', 'wordpress-importer' ),
 			$data['name'],
@@ -1766,7 +1766,7 @@ class WXR_Importer extends WP_Importer {
 	 * @param array $meta List of meta data arrays
 	 * @param int $term_id Term ID to associate with
 	 * @param array $term Term data
-	 * @return int|WP_Error Number of meta items imported on success, error otherwise.
+	 * @return int|bool Number of meta items imported on success, false otherwise.
 	 */
 	protected function process_term_meta( $meta, $term_id, $term ) {
 		if ( empty( $meta ) ) {
