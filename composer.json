@@ -1,0 +1,36 @@
+{
+	"name"              : "wordpress/importer",
+	"description"       : "WordPress importer",
+	"license"           : "MIT",
+	"authors"           : [
+		{
+			"name"     : "Ryan McCue",
+			"email"    : "me@ryanmccue.info",
+			"homepage" : "http://ryanmccue.info/"
+		},
+		{
+			"name"     : "Franz Josef Kaiser",
+			"email"    : "wecodemore@gmail.com",
+			"homepage" : "http://unserkaiser.com"
+		}
+	],
+	"type"              : "wordpress-plugin",
+	"minimum-stability" : "dev",
+	"prefer-stable"     : true,
+	"require"           : {
+		"php"                 : ">=5.2",
+		"composer/installers" : "~1.0"
+	},
+	"autoload"          : { },
+	"autoload-dev"      : { },
+	"extra"             : {
+		"branch-alias"    : {
+			"dev-dev" : "0.1.x-dev"
+		},
+		"installer-paths" : {
+			"vendor/{$name}" : [
+				"type:wordpress-plugin"
+			]
+		}
+	}
+}
