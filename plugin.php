@@ -30,12 +30,15 @@ function wpimportv2_init() {
 	 * WordPress Importer object for registering the import callback
 	 * @global WP_Import $wp_import
 	 */
-	$GLOBALS['wp_import_v2'] = new WP_Import();
-	register_importer(
-		'wordpress-v2',
-		'WordPress (v2)',
-		__('Import <strong>posts, pages, comments, custom fields, categories, and tags</strong> from a WordPress export file.', 'wordpress-importer'),
-		array( $GLOBALS['wp_import'], 'dispatch' )
-	);
+	if(class_exists('WP_Import')){
+		$GLOBALS['wp_import_v2'] = new WP_Import();
+		register_importer(
+			'wordpress-v2',
+			'WordPress (v2)',
+			__('Import <strong>posts, pages, comments, custom fields, categories, and tags</strong> from a WordPress export file.', 'wordpress-importer'),
+			array( $GLOBALS['wp_import'], 'dispatch' )
+		);
+	}
+
 }
 add_action( 'admin_init', 'wpimportv2_init' );
