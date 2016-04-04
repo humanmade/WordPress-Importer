@@ -17,7 +17,9 @@ if ( ! class_exists( 'WP_Importer' ) ) {
 
 require dirname( __FILE__ ) . '/class-logger.php';
 require dirname( __FILE__ ) . '/class-logger-cli.php';
+require dirname( __FILE__ ) . '/class-logger-html.php';
 require dirname( __FILE__ ) . '/class-wxr-importer.php';
+require dirname( __FILE__ ) . '/class-wxr-import-ui.php';
 
 if ( defined( 'WP_CLI' ) ) {
 	require __DIR__ . '/class-command.php';
@@ -30,12 +32,12 @@ function wpimportv2_init() {
 	 * WordPress Importer object for registering the import callback
 	 * @global WP_Import $wp_import
 	 */
-	$GLOBALS['wp_import_v2'] = new WP_Import();
+	$GLOBALS['wxr_importer'] = new WXR_Import_UI();
 	register_importer(
 		'wordpress-v2',
 		'WordPress (v2)',
-		__('Import <strong>posts, pages, comments, custom fields, categories, and tags</strong> from a WordPress export file.', 'wordpress-importer'),
-		array( $GLOBALS['wp_import'], 'dispatch' )
+		__('Import <strong>posts, pages, comments, custom fields, categories, and tags</strong> from a WordPress export (WXR) file.', 'wordpress-importer'),
+		array( $GLOBALS['wxr_importer'], 'dispatch' )
 	);
 }
 add_action( 'admin_init', 'wpimportv2_init' );
