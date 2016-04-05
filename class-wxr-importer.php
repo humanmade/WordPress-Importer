@@ -136,6 +136,91 @@ class WXR_Importer extends WP_Importer {
 	 *
 	 * @param string $file Path to the WXR file for importing
 	 */
+	public function get_preliminary_information( $file ) {
+		// Let's run the actual importer now, woot
+		$reader = $this->get_reader( $file );
+		if ( is_wp_error( $reader ) ) {
+			return $reader;
+		}
+
+		// Set the version to compatibility mode first
+		$this->version = '1.0';
+
+		// Start parsing!
+		$data = array(
+			'users' => array(),
+			'posts' => 0,
+			'terms' => 0,
+		);
+		while ( $reader->read() ) {
+			// Only deal with element opens
+			if ( $reader->nodeType !== XMLReader::ELEMENT ) {
+				continue;
+			}
+
+			switch ( $reader->name ) {
+				case 'wp:wxr_version':
+					// Upgrade to the correct version
+					$this->version = $reader->readString();
+
+					if ( version_compare( $this->version, self::MAX_WXR_VERSION, '>' ) ) {
+						$this->logger->warning( sprintf(
+							__( 'This WXR file (version %s) is newer than the importer (version %s) and may not be supported. Please consider updating.', 'wordpress-importer' ),
+							$this->version,
+							self::MAX_WXR_VERSION
+						) );
+					}
+
+					// Handled everything in this node, move on to the next
+					$reader->next();
+					break;
+
+				case 'wp:author':
+					$node = $reader->expand();
+
+					$parsed = $this->parse_author_node( $node );
+					if ( is_wp_error( $parsed ) ) {
+						$this->log_error( $parsed );
+
+						// Skip the rest of this post
+						$reader->next();
+						break;
+					}
+
+					$data['users'][] = $parsed;
+
+					// Handled everything in this node, move on to the next
+					$reader->next();
+					break;
+
+				case 'item':
+					$data['posts']++;
+
+					// Handled everything in this node, move on to the next
+					$reader->next();
+					break;
+
+				case 'wp:category':
+				case 'wp:tag':
+				case 'wp:term':
+					$data['terms']++;
+
+					// Handled everything in this node, move on to the next
+					$reader->next();
+					break;
+			}
+		}
+
+		$data['version'] = $this->version;
+
+		return $data;
+	}
+
+	/**
+	 * The main controller for the actual import stage.
+	 *
+	 * @param string $file Path to the WXR file for importing
+	 */
 	public function parse_authors( $file ) {
 		// Let's run the actual importer now, woot
 		$reader = $this->get_reader( $file );

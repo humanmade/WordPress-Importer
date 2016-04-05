@@ -133,13 +133,13 @@ class WXR_Import_UI {
 		$this->id = (int) $file['id'];
 
 		$importer = $this->get_importer();
-		$authors = $importer->parse_authors( $file['file'] );
-		if ( is_wp_error( $authors ) ) {
-			return $authors;
+		$data = $importer->get_preliminary_information( $file['file'] );
+		if ( is_wp_error( $data ) ) {
+			return $data;
 		}
 
-		$this->authors = $authors;
-		$this->version = $importer->version;
+		$this->authors = $data['users'];
+		$this->version = $data['version'];
 
 		return true;
 	}
