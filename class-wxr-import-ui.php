@@ -118,7 +118,7 @@ class WXR_Import_UI {
 	 * @return bool False if error uploading or invalid file, true otherwise
 	 */
 	protected function handle_upload() {
-		/*$file = wp_import_handle_upload();
+		$file = wp_import_handle_upload();
 
 		if ( isset( $file['error'] ) ) {
 			return new WP_Error( 'wxr_importer.upload.error', esc_html( $file['error'] ), $file );
@@ -128,13 +128,9 @@ class WXR_Import_UI {
 				esc_html( $file['file'] )
 			);
 			return new WP_Error( 'wxr_importer.upload.no_file', $message, $file );
-		}*/
+		}
 
-		// $this->id = (int) $file['id'];
-		$this->id = 6;
-		$file = array(
-			'file' => get_attached_file( 6 ),
-		);
+		$this->id = (int) $file['id'];
 
 		$importer = $this->get_importer();
 		$authors = $importer->parse_authors( $file['file'] );
