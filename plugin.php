@@ -19,6 +19,7 @@ require dirname( __FILE__ ) . '/class-logger.php';
 require dirname( __FILE__ ) . '/class-logger-cli.php';
 require dirname( __FILE__ ) . '/class-logger-html.php';
 require dirname( __FILE__ ) . '/class-wxr-importer.php';
+require dirname( __FILE__ ) . '/class-wxr-import-info.php';
 require dirname( __FILE__ ) . '/class-wxr-import-ui.php';
 
 if ( defined( 'WP_CLI' ) ) {

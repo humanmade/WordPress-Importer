@@ -5,7 +5,7 @@
 ?>
 <form action="<?php echo $this->get_url( 2 ) ?>" method="post">
 
-	<?php if ( ! empty( $this->authors ) ) : ?>
+	<?php if ( ! empty( $data->users ) ) : ?>
 
 		<h3><?php esc_html_e( 'Assign Authors', 'wordpress-importer' ) ?></h3>
 		<p><?php _e( 'To make it easier for you to edit and save the imported content, you may want to reassign the author of the imported item to an existing user of this site. For example, you may want to import all the entries as <code>admin</code>s entries.', 'wordpress-importer' ) ?></p>
@@ -18,9 +18,9 @@
 
 		<ol id="authors">
 
-			<?php foreach ( $this->authors as $index => $author ): ?>
+			<?php foreach ( $data->users as $index => $users ): ?>
 
-				<li><?php $this->author_select( $index, $author['data'] ); ?></li>
+				<li><?php $this->author_select( $index, $users['data'] ); ?></li>
 
 			<?php endforeach ?>
 

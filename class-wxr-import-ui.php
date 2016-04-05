@@ -102,9 +102,9 @@ class WXR_Import_UI {
 	 * Display the author picker (or upload errors).
 	 */
 	protected function display_author_step() {
-		$err = $this->handle_upload();
-		if ( is_wp_error( $err ) ) {
-			$this->display_error( $err );
+		$data = $this->handle_upload();
+		if ( is_wp_error( $data ) ) {
+			$this->display_error( $data );
 			return;
 		}
 
@@ -138,10 +138,10 @@ class WXR_Import_UI {
 			return $data;
 		}
 
-		$this->authors = $data['users'];
-		$this->version = $data['version'];
+		$this->authors = $data->users;
+		$this->version = $data->version;
 
-		return true;
+		return $data;
 	}
 
 	/**

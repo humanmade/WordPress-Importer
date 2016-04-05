@@ -147,11 +147,7 @@ class WXR_Importer extends WP_Importer {
 		$this->version = '1.0';
 
 		// Start parsing!
-		$data = array(
-			'users' => array(),
-			'posts' => 0,
-			'terms' => 0,
-		);
+		$data = new WXR_Import_Info();
 		while ( $reader->read() ) {
 			// Only deal with element opens
 			if ( $reader->nodeType !== XMLReader::ELEMENT ) {
@@ -187,14 +183,14 @@ class WXR_Importer extends WP_Importer {
 						break;
 					}
 
-					$data['users'][] = $parsed;
+					$data->users[] = $parsed;
 
 					// Handled everything in this node, move on to the next
 					$reader->next();
 					break;
 
 				case 'item':
-					$data['posts']++;
+					$data->post_count++;
 
 					// Handled everything in this node, move on to the next
 					$reader->next();
@@ -203,7 +199,7 @@ class WXR_Importer extends WP_Importer {
 				case 'wp:category':
 				case 'wp:tag':
 				case 'wp:term':
-					$data['terms']++;
+					$data->term_count++;
 
 					// Handled everything in this node, move on to the next
 					$reader->next();
@@ -211,7 +207,7 @@ class WXR_Importer extends WP_Importer {
 			}
 		}
 
-		$data['version'] = $this->version;
+		$data->version = $this->version;
 
 		return $data;
 	}
