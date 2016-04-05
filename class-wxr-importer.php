@@ -171,7 +171,7 @@ class WXR_Importer extends WP_Importer {
 					$reader->next();
 					break;
 
-				case 'wp:wp_author':
+				case 'wp:author':
 					$node = $reader->expand();
 
 					$parsed = $this->parse_author_node( $node );
@@ -268,7 +268,7 @@ class WXR_Importer extends WP_Importer {
 					$reader->next();
 					break;
 
-				case 'wp:wp_author':
+				case 'wp:author':
 					$node = $reader->expand();
 
 					$parsed = $this->parse_author_node( $node );
