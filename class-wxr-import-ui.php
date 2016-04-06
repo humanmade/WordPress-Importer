@@ -182,12 +182,29 @@ class WXR_Import_UI {
 	}
 
 	protected function get_data_for_attachment( $id ) {
+		$existing = get_post_meta( $id, '_wxr_import_info' );
+		if ( ! empty( $existing ) ) {
+			$data = $existing[0];
+			$this->authors = $data->users;
+			$this->version = $data->version;
+			return $data;
+		}
+
 		$file = get_attached_file( $id );
 
 		$importer = $this->get_importer();
 		$data = $importer->get_preliminary_information( $file );
 		if ( is_wp_error( $data ) ) {
 			return $data;
+		}
+
+		// Cache the information on the upload
+		if ( ! update_post_meta( $id, '_wxr_import_info', $data ) ) {
+			return new WP_Error(
+				'wxr_importer.upload.failed_save_meta',
+				__( 'Could not cache information on the import.', 'wordpress-importer' ),
+				compact( 'id' )
+			);
 		}
 
 		$this->authors = $data->users;
