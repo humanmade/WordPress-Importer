@@ -171,6 +171,26 @@ class WXR_Importer extends WP_Importer {
 					$reader->next();
 					break;
 
+				case 'generator':
+					$data->generator = $reader->readString();
+					$reader->next();
+					break;
+
+				case 'title':
+					$data->title = $reader->readString();
+					$reader->next();
+					break;
+
+				case 'wp:base_site_url':
+					$data->siteurl = $reader->readString();
+					$reader->next();
+					break;
+
+				case 'wp:base_blog_url':
+					$data->home = $reader->readString();
+					$reader->next();
+					break;
+
 				case 'wp:author':
 					$node = $reader->expand();
 
@@ -190,7 +210,22 @@ class WXR_Importer extends WP_Importer {
 					break;
 
 				case 'item':
-					$data->post_count++;
+					$node = $reader->expand();
+					$parsed = $this->parse_post_node( $node );
+					if ( is_wp_error( $parsed ) ) {
+						$this->log_error( $parsed );
+
+						// Skip the rest of this post
+						$reader->next();
+						break;
+					}
+
+					if ( $parsed['data']['post_type'] === 'attachment' ) {
+						$data->media_count++;
+					} else {
+						$data->post_count++;
+					}
+					$data->comment_count += count( $parsed['comments'] );
 
 					// Handled everything in this node, move on to the next
 					$reader->next();
