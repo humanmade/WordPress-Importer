@@ -1331,6 +1331,16 @@ class WXR_Importer extends WP_Importer {
 				add_comment_meta( $comment_id, wp_slash( $meta_item['key'] ), wp_slash( $value ) );
 			}
 
+			/**
+			 * Post processing completed.
+			 *
+			 * @param int $post_id New post ID.
+			 * @param array $comment Raw data imported for the comment.
+			 * @param array $meta Raw meta data, already processed by {@see process_post_meta}.
+			 * @param array $post_id Parent post ID.
+			 */
+			do_action( 'wxr_importer.processed.comment', $comment_id, $comment, $meta, $post_id );
+
 			$num_comments++;
 		}
 
@@ -1510,6 +1520,13 @@ class WXR_Importer extends WP_Importer {
 		) );
 
 		// TODO: Implement meta handling once WXR includes it
+		/**
+		 * User processing completed.
+		 *
+		 * @param int $user_id New user ID.
+		 * @param array $userdata Raw data imported for the user.
+		 */
+		do_action( 'wxr_importer.processed.user', $user_id, $userdata );
 	}
 
 	protected function parse_term_node( $node, $type = 'term' ) {
@@ -1659,6 +1676,14 @@ class WXR_Importer extends WP_Importer {
 		) );
 
 		do_action( 'wp_import_insert_term', $term_id, $data );
+
+		/**
+		 * Term processing completed.
+		 *
+		 * @param int $term_id New term ID.
+		 * @param array $data Raw data imported for the term.
+		 */
+		do_action( 'wxr_importer.processed.term', $term_id, $data );
 	}
 
 	/**
