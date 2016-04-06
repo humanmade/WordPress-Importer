@@ -22,7 +22,7 @@ wp_enqueue_media();
 
 	<?php wp_import_upload_form( $this->get_url( 1 ) ) ?>
 
-	<form action="<?php echo esc_attr( $this->get_url( 1 ) ) ?>" method="GET">
+	<form action="<?php echo esc_attr( $this->get_url( 1 ) ) ?>" method="POST">
 		<p><?php esc_html_e(
 			'Already uploaded your WXR file?.',
 			'wordpress-importer'
