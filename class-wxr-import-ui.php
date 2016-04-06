@@ -274,6 +274,7 @@ class WXR_Import_UI {
 		flush();
 
 		$mapping = $settings['mapping'];
+		$this->fetch_attachments = (bool) $settings['fetch_attachments'];
 
 		$importer = $this->get_importer();
 		if ( ! empty( $mapping['mapping'] ) ) {
