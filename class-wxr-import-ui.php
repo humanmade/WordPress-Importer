@@ -339,38 +339,6 @@ class WXR_Import_UI {
 	}
 
 	/**
-	 * Retrieve authors from parsed WXR data
-	 *
-	 * Uses the provided author information from WXR 1.1 files
-	 * or extracts info from each post for WXR 1.0 files
-	 *
-	 * @param array $import_data Data returned by a WXR parser
-	 */
-	function get_authors_from_import( $import_data ) {
-		if ( ! empty( $import_data['authors'] ) ) {
-			$this->authors = $import_data['authors'];
-		// no author information, grab it from the posts
-		} else {
-			foreach ( $import_data['posts'] as $post ) {
-				$login = sanitize_user( $post['post_author'], true );
-				if ( empty( $login ) ) {
-					$this->logger->warning( sprintf(
-						__( 'Failed to import author %s. Their posts will be attributed to the current user.', 'wordpress-importer' ),
-						$post['post_author']
-					) );
-					continue;
-				}
-
-				if ( ! isset($this->authors[$login]) )
-					$this->authors[$login] = array(
-						'author_login' => $login,
-						'author_display_name' => $post['post_author']
-					);
-			}
-		}
-	}
-
-	/**
 	 * Decide whether or not the importer should attempt to download attachment files.
 	 * Default is true, can be filtered via import_allow_fetch_attachments. The choice
 	 * made at the import options screen must also be true, false here hides that checkbox.
