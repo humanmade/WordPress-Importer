@@ -102,7 +102,17 @@ class WXR_Import_UI {
 	 * Display the author picker (or upload errors).
 	 */
 	protected function display_author_step() {
-		$data = $this->handle_upload();
+		if ( isset( $_REQUEST['id'] ) ) {
+			$err = $this->handle_select( $_REQUEST['id'] );
+		} else {
+			$err = $this->handle_upload();
+		}
+		if ( is_wp_error( $err ) ) {
+			$this->display_error( $err );
+			return;
+		}
+
+		$data = $this->get_data_for_attachment( $this->id );
 		if ( is_wp_error( $data ) ) {
 			$this->display_error( $data );
 			return;
@@ -115,7 +125,7 @@ class WXR_Import_UI {
 	 * Handles the WXR upload and initial parsing of the file to prepare for
 	 * displaying author import options
 	 *
-	 * @return bool False if error uploading or invalid file, true otherwise
+	 * @return bool|WP_Error True on success, error object otherwise.
 	 */
 	protected function handle_upload() {
 		$file = wp_import_handle_upload();
@@ -131,9 +141,51 @@ class WXR_Import_UI {
 		}
 
 		$this->id = (int) $file['id'];
+		return true;
+	}
+
+	/**
+	 * Handle a WXR file selected from the media browser.
+	 *
+	 * @return bool|WP_Error True on success, error object otherwise.
+	 */
+	protected function handle_select( $id ) {
+		if ( ! is_numeric( $id ) || intval( $id ) < 1 ) {
+			return new WP_Error(
+				'wxr_importer.upload.invalid_id',
+				__( 'Invalid media item ID.', 'wordpress-importer' ),
+				compact( 'id' )
+			);
+		}
+
+		$id = (int) $id;
+
+		$attachment = get_post( $id );
+		if ( ! $attachment || $attachment->post_type !== 'attachment' ) {
+			return new WP_Error(
+				'wxr_importer.upload.invalid_id',
+				__( 'Invalid media item ID.', 'wordpress-importer' ),
+				compact( 'id', 'attachment' )
+			);
+		}
+
+		if ( ! current_user_can( 'read_post', $attachment->ID ) ) {
+			return new WP_Error(
+				'wxr_importer.upload.sorry_dave',
+				__( 'You cannot access the selected media item.', 'wordpress-importer' ),
+				compact( 'id', 'attachment' )
+			);
+		}
+
+		$this->id = $id;
+		return true;
+	}
+
+	protected function get_data_for_attachment( $id ) {
+		$file = get_attached_file( $id );
 
 		$importer = $this->get_importer();
-		$data = $importer->get_preliminary_information( $file['file'] );
+		$data = $importer->get_preliminary_information( $file );
 		if ( is_wp_error( $data ) ) {
 			return $data;
 		}
