@@ -219,13 +219,63 @@ class WXR_Import_UI {
 	protected function display_import_step() {
 		$args = wp_unslash( $_POST );
 
-		$this->fetch_attachments = ( ! empty( $args['fetch_attachments'] ) && $this->allow_fetch_attachments() );
 		$this->id = (int) $args['import_id'];
 		$file = get_attached_file( $this->id );
 
-		$importer = $this->get_importer();
-
 		$mapping = $this->get_author_mapping( $args );
+		$fetch_attachments = ( ! empty( $args['fetch_attachments'] ) && $this->allow_fetch_attachments() );
+
+		// Set our settings
+		$settings = compact( 'mapping', 'fetch_attachments' );
+		update_post_meta( $this->id, '_wxr_import_settings', $settings );
+
+		// Time to run the import!
+		set_time_limit(0);
+
+		// Ensure we're not buffered.
+		wp_ob_end_flush_all();
+		flush();
+
+		$data = get_post_meta( $this->id, '_wxr_import_info', true );
+		require __DIR__ . '/templates/import.php';
+	}
+
+	public function stream_import() {
+		// Turn off PHP output compression
+		@ini_set( 'output_buffering', 'off' );
+		@ini_set( 'zlib.output_compression', false );
+
+		if ( $GLOBALS['is_nginx'] ) {
+			// Setting this header instructs Nginx to disable fastcgi_buffering
+			// and disable gzip for this request.
+			header( 'X-Accel-Buffering: no' );
+			header( 'Content-Encoding: none' );
+		}
+
+		// Start the event stream.
+		header( 'Content-Type: text/event-stream' );
+
+		$this->id = wp_unslash( (int) $_REQUEST['id'] );
+		$settings = get_post_meta( $this->id, '_wxr_import_settings', true );
+		if ( empty( $settings ) ) {
+			// Tell the browser to stop reconnecting.
+			status_header( 204 );
+			exit;
+		}
+
+		// 2KB padding for IE
+		echo ':' . str_repeat(' ', 2048) . "\n\n";
+
+		// Time to run the import!
+		set_time_limit(0);
+
+		// Ensure we're not buffered.
+		wp_ob_end_flush_all();
+		flush();
+
+		$mapping = $settings['mapping'];
+
+		$importer = $this->get_importer();
 		if ( ! empty( $mapping['mapping'] ) ) {
 			$importer->set_user_mapping( $mapping['mapping'] );
 		}
@@ -238,21 +288,35 @@ class WXR_Import_UI {
 			add_filter( 'wxr_importer.pre_process.user', '__return_null' );
 		}
 
-		// Time to run the import!
-		set_time_limit(0);
+		// Keep track of our progress
+		add_action( 'wxr_importer.processed.post', array( $this, 'imported_post' ), 10, 2 );
+		add_action( 'wxr_importer.processed.comment', array( $this, 'imported_comment' ) );
+		add_action( 'wxr_importer.processed.term', array( $this, 'imported_term' ) );
+		add_action( 'wxr_importer.processed.user', array( $this, 'imported_user' ) );
 
+		// Clean up some memory
+		unset( $settings );
+
+		// Flush once more.
+		flush();
+
+		$file = get_attached_file( $this->id );
 		$err = $importer->import( $file );
 
-		// Clean up, we're done here.
-		wp_import_cleanup( $this->id );
+		// Remove the settings to stop future reconnects.
+		delete_post_meta( $this->id, '_wxr_import_settings' );
 
+		// Let the browser know we're done.
+		$complete = array(
+			'action' => 'complete',
+			'error' => false,
+		);
 		if ( is_wp_error( $err ) ) {
-			$this->display_error( $err );
-			return;
+			$complete['error'] = $err->get_error_message();
 		}
 
-		echo '<p>' . __( 'All done.', 'wordpress-importer' ) . ' <a href="' . admin_url() . '">' . __( 'Have fun!', 'wordpress-importer' ) . '</a>' . '</p>';
-		echo '<p>' . __( 'Remember to update the passwords and roles of imported users.', 'wordpress-importer' ) . '</p>';
+		$this->emit_sse_message( $complete );
+		exit;
 	}
 
 	/**
@@ -262,7 +326,7 @@ class WXR_Import_UI {
 	 */
 	protected function get_importer() {
 		$importer = new WXR_Importer( $this->get_import_options() );
-		$logger = new WP_Importer_Logger_HTML();
+		$logger = new WP_Importer_Logger_ServerSentEvents();
 		$importer->set_logger( $logger );
 
 		return $importer;
@@ -418,5 +482,44 @@ class WXR_Import_UI {
 		}
 
 		return compact( 'mapping', 'slug_overrides' );
+	}
+
+	protected function emit_sse_message( $data ) {
+		echo "event: message\n";
+		echo 'data: ' . wp_json_encode( $data ) . "\n\n";
+
+		// Extra padding.
+		echo ':' . str_repeat(' ', 2048) . "\n\n";
+
+		flush();
+	}
+
+	public function imported_post( $id, $data ) {
+		$this->emit_sse_message( array(
+			'action' => 'updateDelta',
+			'type'   => ( $data['post_type'] === 'attachment' ) ? 'media' : 'posts',
+			'delta'  => 1,
+		));
+	}
+	public function imported_comment() {
+		$this->emit_sse_message( array(
+			'action' => 'updateDelta',
+			'type'   => 'comments',
+			'delta'  => 1,
+		));
+	}
+	public function imported_term() {
+		$this->emit_sse_message( array(
+			'action' => 'updateDelta',
+			'type'   => 'terms',
+			'delta'  => 1,
+		));
+	}
+	public function imported_user() {
+		$this->emit_sse_message( array(
+			'action' => 'updateDelta',
+			'type'   => 'users',
+			'delta'  => 1,
+		));
 	}
 }

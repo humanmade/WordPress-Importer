@@ -18,6 +18,7 @@ if ( ! class_exists( 'WP_Importer' ) ) {
 require dirname( __FILE__ ) . '/class-logger.php';
 require dirname( __FILE__ ) . '/class-logger-cli.php';
 require dirname( __FILE__ ) . '/class-logger-html.php';
+require dirname( __FILE__ ) . '/class-logger-serversentevents.php';
 require dirname( __FILE__ ) . '/class-wxr-importer.php';
 require dirname( __FILE__ ) . '/class-wxr-import-info.php';
 require dirname( __FILE__ ) . '/class-wxr-import-ui.php';
@@ -40,5 +41,7 @@ function wpimportv2_init() {
 		__('Import <strong>posts, pages, comments, custom fields, categories, and tags</strong> from a WordPress export (WXR) file.', 'wordpress-importer'),
 		array( $GLOBALS['wxr_importer'], 'dispatch' )
 	);
+
+	add_action( 'wp_ajax_wxr-import', array( $GLOBALS['wxr_importer'], 'stream_import' ) );
 }
 add_action( 'admin_init', 'wpimportv2_init' );
