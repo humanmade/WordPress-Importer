@@ -3,6 +3,8 @@
  * Intro screen and uploader (step 0).
  */
 ?>
+<h2><?php esc_html_e( 'Import WordPress', 'wordpress-importer' ) ?></h2>
+
 <div class="narrow">
 
 	<p><?php esc_html_e(
