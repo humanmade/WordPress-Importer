@@ -291,9 +291,12 @@ class WXR_Import_UI {
 
 		// Keep track of our progress
 		add_action( 'wxr_importer.processed.post', array( $this, 'imported_post' ), 10, 2 );
+		add_action( 'wxr_importer.process_failed.post', array( $this, 'imported_post' ), 10, 2 );
 		add_action( 'wxr_importer.processed.comment', array( $this, 'imported_comment' ) );
 		add_action( 'wxr_importer.processed.term', array( $this, 'imported_term' ) );
+		add_action( 'wxr_importer.process_failed.term', array( $this, 'imported_term' ) );
 		add_action( 'wxr_importer.processed.user', array( $this, 'imported_user' ) );
+		add_action( 'wxr_importer.process_failed.user', array( $this, 'imported_user' ) );
 
 		// Clean up some memory
 		unset( $settings );

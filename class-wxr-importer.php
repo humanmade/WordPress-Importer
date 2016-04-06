@@ -850,6 +850,17 @@ class WXR_Importer extends WP_Importer {
 				$post_type_object->labels->singular_name
 			) );
 			$this->logger->debug( $post_id->get_error_message() );
+
+			/**
+			 * Post processing failed.
+			 *
+			 * @param WP_Error $post_id Error object.
+			 * @param array $data Raw data imported for the post.
+			 * @param array $meta Raw meta data, already processed by {@see process_post_meta}.
+			 * @param array $comments Raw comment data, already processed by {@see process_comments}.
+			 * @param array $terms Raw term data, already processed.
+			 */
+			do_action( 'wxr_importer.process_failed.post', $post_id, $data, $meta, $comments, $terms );
 			return false;
 		}
 
@@ -1501,6 +1512,14 @@ class WXR_Importer extends WP_Importer {
 				$userdata['user_login']
 			) );
 			$this->logger->debug( $user_id->get_error_message() );
+
+			/**
+			 * User processing failed.
+			 *
+			 * @param WP_Error $user_id Error object.
+			 * @param array $userdata Raw data imported for the user.
+			 */
+			do_action( 'wxr_importer.process_failed.user', $user_id, $userdata );
 			return false;
 		}
 
@@ -1656,6 +1675,15 @@ class WXR_Importer extends WP_Importer {
 			) );
 			$this->logger->debug( $result->get_error_message() );
 			do_action( 'wp_import_insert_term_failed', $result, $data );
+
+			/**
+			 * Term processing failed.
+			 *
+			 * @param WP_Error $result Error object.
+			 * @param array $data Raw data imported for the term.
+			 * @param array $meta Meta data supplied for the term.
+			 */
+			do_action( 'wxr_importer.process_failed.term', $result, $data, $meta );
 			return false;
 		}
 
