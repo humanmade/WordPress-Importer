@@ -45,6 +45,7 @@ jQuery( function ($) {
 		// Tell the modal to show only images.
 		library: {
 			type: '',
+			status: 'private',
 		},
 
 		// Customize the submit button.
