@@ -73,6 +73,7 @@ class WXR_Importer extends WP_Importer {
 	 *     @var bool $update_attachment_guids Should attachment GUIDs be updated to the new URL? (True updates the GUID, which keeps compatibility with v1, false doesn't update, and allows deduplication and reimporting. Default is false.)
 	 *     @var bool $fetch_attachments Fetch attachments from the remote server. (True fetches and creates attachment posts, false skips attachments. Default is false.)
 	 *     @var bool $aggressive_url_search Should we search/replace for URLs aggressively? (True searches all posts' content for old URLs and replaces, false checks for `<img class="wp-image-*">` only. Default is false.)
+	 *     @var int $default_author User ID to use if author is missing or invalid. (Default is null, which leaves posts unassigned.)
 	 * }
 	 */
 	public function __construct( $options = array() ) {
@@ -97,6 +98,7 @@ class WXR_Importer extends WP_Importer {
 			'update_attachment_guids'   => false,
 			'fetch_attachments'         => false,
 			'aggressive_url_search'     => false,
+			'default_author'            => null,
 		) );
 	}
 
@@ -781,7 +783,10 @@ class WXR_Importer extends WP_Importer {
 
 		// Map the author, or mark it as one we need to fix
 		$author = sanitize_user( $data['post_author'], true );
-		if ( isset( $this->mapping['user_slug'][ $author ] ) ) {
+		if ( empty( $author ) ) {
+			// Missing or invalid author, use default if available.
+			$data['post_author'] = $this->options['default_author'];
+		} elseif ( isset( $this->mapping['user_slug'][ $author ] ) ) {
 			$data['post_author'] = $this->mapping['user_slug'][ $author ];
 		}
 		else {

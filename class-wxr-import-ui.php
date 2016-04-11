@@ -344,6 +344,7 @@ class WXR_Import_UI {
 	protected function get_import_options() {
 		$options = array(
 			'fetch_attachments' => $this->fetch_attachments,
+			'default_author'    => get_current_user_id(),
 		);
 
 		/**
