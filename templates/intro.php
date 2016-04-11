@@ -6,23 +6,26 @@
 wp_enqueue_media();
 
 ?>
-<h2><?php esc_html_e( 'Import WordPress', 'wordpress-importer' ) ?></h2>
+<div class="welcome-panel">
+	<div class="welcome-panel-content">
+		<h2><?php esc_html_e( 'Step 1: Select Your Files', 'wordpress-importer' ) ?></h2>
+		<p><?php esc_html_e(
+			'Welcome to the WordPress Importer! Let&#8217;s get started importing your posts, pages, and media.',
+			'wordpress-importer'
+		) ?></p>
+		<p><?php esc_html_e(
+			'To get started, simply upload a WordPress eXtended RSS (WXR) file to import.',
+			'wordpress-importer'
+		) ?></p>
+	</div>
+</div>
 
 <div class="narrow">
 
-	<p><?php esc_html_e(
-		'Howdy! Upload your WordPress eXtended RSS (WXR) file and we&#8217;ll import the posts, pages, comments, custom fields, categories, and tags into this site.',
-		'wordpress-importer'
-	) ?></p>
-
-	<p><?php esc_html_e(
-		'Choose a WXR (.xml) file to upload, then click Upload file and import.',
-		'wordpress-importer'
-	) ?></p>
-
-	<?php wp_import_upload_form( $this->get_url( 1 ) ) ?>
-
 	<form action="<?php echo esc_attr( $this->get_url( 1 ) ) ?>" method="POST">
+
+		<?php $this->render_upload_form() ?>
+
 		<p><?php esc_html_e(
 			'Already uploaded your WXR file?.',
 			'wordpress-importer'

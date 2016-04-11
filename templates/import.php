@@ -102,6 +102,17 @@
 				</tr>
 			</tbody>
 		</table>
+
+		<div class="import-status-indicator">
+			<div class="progress">
+				<progress id="progressbar-total" max="100" value="0"></progress>
+			</div>
+			<div class="status">
+				<span id="completed-total" class="completed">0/0</span>
+				<span id="progress-total" class="progress">0%</span>
+				<span class="dashicons dashicons-yes"></span>
+			</div>
+		</div>
 	</div>
 </div>
 
@@ -155,20 +166,32 @@ var wxrImport = {
 			self.render();
 		});
 	},
+	updateProgress: function ( type, complete, total ) {
+		var text = complete + '/' + total;
+		document.getElementById( 'completed-' + type ).innerHTML = text;
+		var percent = parseInt( complete ) / parseInt( total );
+		document.getElementById( 'progress-' + type ).innerHTML = Math.round( percent * 100 ) + '%';
+		document.getElementById( 'progressbar-' + type ).value = percent * 100;
+	},
 	render: function () {
 		var types = Object.keys( this.complete );
+		var complete = 0;
+		var total = 0;
+		console.log(this);
 		for (var i = types.length - 1; i >= 0; i--) {
 			var type = types[i];
-			var text = this.complete[ type ] + '/' + this.data.count[ type ]
-			document.getElementById( 'completed-' + type ).innerHTML = text;
-			var percent = parseInt( this.complete[ type ] ) / parseInt( this.data.count[ type ] );
-			document.getElementById( 'progress-' + type ).innerHTML = Math.round( percent * 100 ) + '%';
-			document.getElementById( 'progressbar-' + type ).value = percent * 100;
+			this.updateProgress( type, this.complete[ type ], this.data.count[ type ] );
+
+			complete += this.complete[ type ];
+			total += this.data.count[ type ];
 		}
+
+		this.updateProgress( 'total', complete, total );
 	}
 };
 wxrImport.data = <?php echo wp_json_encode( $script_data ) ?>;
 wxrImport.render();
+
 
 var evtSource = new EventSource( wxrImport.data.url );
 evtSource.onmessage = function ( message ) {
@@ -180,7 +203,7 @@ evtSource.onmessage = function ( message ) {
 
 		case 'complete':
 			evtSource.close();
-			$('#import-status-message').text( wxrImport.data.strings.complete );
+			jQuery('#import-status-message').text( wxrImport.data.strings.complete );
 			break;
 	}
 };
@@ -224,5 +247,23 @@ evtSource.addEventListener( 'log', function ( message ) {
 
 #import-log tbody {
 	max-height: 40em;
+}
+.import-status-indicator {
+	margin-bottom: 1em;
+}
+.import-status-indicator progress {
+	width: 100%;
+}
+.import-status-indicator .status {
+	text-align: center;
+}
+.import-status-indicator .status .dashicons {
+	color: #46B450;
+	font-size: 3rem;
+	height: auto;
+	width: auto;
+}
+#completed-total {
+	display: none;
 }
 </style>

@@ -15,6 +15,7 @@ class WXR_Import_UI {
 	 */
 	public function __construct() {
 		add_action( 'wxr_importer.ui.header', array( $this, 'show_updates_in_header' ) );
+		add_action( 'admin_action_wxr-import-upload', array( $this, 'handle_async_upload' ) );
 	}
 
 	/**
@@ -98,6 +99,59 @@ class WXR_Import_UI {
 		require __DIR__ . '/templates/intro.php';
 	}
 
+	protected function render_upload_form() {
+		/**
+		 * Filter the maximum allowed upload size for import files.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @see wp_max_upload_size()
+		 *
+		 * @param int $max_upload_size Allowed upload size. Default 1 MB.
+		 */
+		$max_upload_size = apply_filters( 'import_upload_size_limit', wp_max_upload_size() );
+		$upload_dir = wp_upload_dir();
+		if ( ! empty( $upload_dir['error'] ) ) {
+			$error = '<div class="error inline"><p>';
+			$error .= esc_html__(
+				'Before you can upload your import file, you will need to fix the following error:',
+				'wordpress-importer'
+			);
+			$error .= sprintf( '<p><strong>%s</strong></p></div>', $upload_dir['error'] );
+			echo $error;
+			return;
+		}
+
+		// Load the template
+		require __DIR__ . '/templates/upload.php';
+
+		// Queue the JS needed for the page
+		$url = plugins_url( 'assets/intro.js', __FILE__ );
+		$deps = array(
+			'wp-backbone',
+			'wp-plupload',
+		);
+		wp_enqueue_script( 'import-upload', $url, $deps, false, true );
+
+		// Set uploader settings
+		wp_plupload_default_settings();
+		$settings = array(
+			'next_url' => wp_nonce_url( $this->get_url( 1 ), 'import-upload' ) . '&id={id}',
+			'plupload' => array(
+				'filter' => array(
+					'max_file_size' => $max_upload_size . 'b',
+				),
+
+				'file_data_name' => 'import',
+				'multipart_params' => array(
+					'action'   => 'wxr-import-upload',
+					'_wpnonce' => wp_create_nonce( 'wxr-import-upload' ),
+				),
+			),
+		);
+		wp_localize_script( 'import-upload', 'importUploadSettings', $settings );
+	}
+
 	/**
 	 * Display the author picker (or upload errors).
 	 */
@@ -142,6 +196,55 @@ class WXR_Import_UI {
 
 		$this->id = (int) $file['id'];
 		return true;
+	}
+
+	public function handle_async_upload() {
+		header( 'Content-Type: text/html; charset=' . get_option( 'blog_charset' ) );
+		send_nosniff_header();
+		nocache_headers();
+
+		check_ajax_referer( 'wxr-import-upload' );
+
+		/*
+		 * This function does not use wp_send_json_success() / wp_send_json_error()
+		 * as the html4 Plupload handler requires a text/html content-type for older IE.
+		 * See https://core.trac.wordpress.org/ticket/31037
+		 */
+
+		if ( ! current_user_can( 'upload_files' ) ) {
+			echo wp_json_encode( array(
+				'success' => false,
+				'data'    => array(
+					'message'  => __( 'You do not have permission to upload files.' ),
+					'filename' => $_FILES['import']['name'],
+				)
+			) );
+
+			exit;
+		}
+
+		$file = wp_import_handle_upload();
+		if ( is_wp_error( $file ) ) {
+			echo wp_json_encode( array(
+				'success' => false,
+				'data'    => array(
+					'message'  => $file->get_error_message(),
+					'filename' => $_FILES['import']['name'],
+				)
+			) );
+
+			wp_die();
+		}
+
+		if ( ! $attachment = wp_prepare_attachment_for_js( $file['id'] ) )
+			exit;
+
+		echo wp_json_encode( array(
+			'success' => true,
+			'data'    => $attachment,
+		) );
+
+		exit;
 	}
 
 	/**
