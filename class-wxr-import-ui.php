@@ -123,7 +123,9 @@ class WXR_Import_UI {
 		}
 
 		// Load the template
+		remove_action( 'post-plupload-upload-ui', 'media_upload_flash_bypass' );
 		require __DIR__ . '/templates/upload.php';
+		add_action( 'post-plupload-upload-ui', 'media_upload_flash_bypass' );
 
 		// Queue the JS needed for the page
 		$url = plugins_url( 'assets/intro.js', __FILE__ );
