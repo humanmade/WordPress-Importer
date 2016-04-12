@@ -190,8 +190,8 @@ class WXR_Import_UI {
 			return new WP_Error( 'wxr_importer.upload.error', esc_html( $file['error'] ), $file );
 		} elseif ( ! file_exists( $file['file'] ) ) {
 			$message = sprintf(
-				__( 'The export file could not be found at <code>%s</code>. It is likely that this was caused by a permissions problem.', 'wordpress-importer' ),
-				esc_html( $file['file'] )
+				esc_html__( 'The export file could not be found at %s. It is likely that this was caused by a permissions problem.', 'wordpress-importer' ),
+				'<code>' . esc_html( $file['file'] ) . '</code>'
 			);
 			return new WP_Error( 'wxr_importer.upload.no_file', $message, $file );
 		}
