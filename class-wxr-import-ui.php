@@ -238,8 +238,10 @@ class WXR_Import_UI {
 			wp_die();
 		}
 
-		if ( ! $attachment = wp_prepare_attachment_for_js( $file['id'] ) )
+		$attachment = wp_prepare_attachment_for_js( $file['id'] );
+		if ( ! $attachment ) {
 			exit;
+		}
 
 		echo wp_json_encode( array(
 			'success' => true,
