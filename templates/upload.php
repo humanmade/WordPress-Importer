@@ -59,19 +59,6 @@
 	esc_html( size_format( $max_upload_size ) )
 ) ?></p>
 
-<style>
-#plupload-upload-ui .drag-drop-status {
-	display: none;
-
-	margin: 70px auto 0;
-	width: 400px;
-}
-#plupload-upload-ui .drag-drop-status .media-item {
-	width: 200px;
-	margin: 0 auto;
-}
-</style>
-
 <script type="text/html" id="tmpl-import-upload-status">
 	<# if ( data.uploading ) { #>
 		<p><?php echo wp_kses( sprintf(

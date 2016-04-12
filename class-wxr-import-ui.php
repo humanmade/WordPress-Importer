@@ -144,11 +144,6 @@ class WXR_Import_UI {
 			return;
 		}
 
-		// Load the template
-		remove_action( 'post-plupload-upload-ui', 'media_upload_flash_bypass' );
-		require __DIR__ . '/templates/upload.php';
-		add_action( 'post-plupload-upload-ui', 'media_upload_flash_bypass' );
-
 		// Queue the JS needed for the page
 		$url = plugins_url( 'assets/intro.js', __FILE__ );
 		$deps = array(
@@ -174,6 +169,13 @@ class WXR_Import_UI {
 			),
 		);
 		wp_localize_script( 'import-upload', 'importUploadSettings', $settings );
+
+		wp_enqueue_style( 'wxr-import-upload', plugins_url( 'assets/intro.css', __FILE__ ), array(), '20160412' );
+
+		// Load the template
+		remove_action( 'post-plupload-upload-ui', 'media_upload_flash_bypass' );
+		require __DIR__ . '/templates/upload.php';
+		add_action( 'post-plupload-upload-ui', 'media_upload_flash_bypass' );
 	}
 
 	/**
