@@ -32,7 +32,10 @@ $this->render_header();
 			'Already uploaded your WXR file?.',
 			'wordpress-importer'
 		) ?></p>
-		<button class="button upload-select">Select it from the Media Library</button>
+		<button class="button upload-select"><?php esc_html_e(
+			'Select it from the Media Library',
+			'wordpress-importer'
+		) ?></button>
 
 		<?php wp_nonce_field( 'import-upload' ) ?>
 		<input type="hidden" id="import-selected-id" name="id" value="" />
