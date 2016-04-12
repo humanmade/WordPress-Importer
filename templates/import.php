@@ -25,6 +25,8 @@ $script_data = array(
 
 $url = plugins_url( 'assets/import.js', dirname( __FILE__ ) );
 wp_enqueue_script( 'wxr-importer-import', $url, array( 'jquery' ), '20160412', true );
+wp_localize_script( 'wxr-importer-import', 'wxrImportData', $script_data );
+
 wp_enqueue_style( 'wxr-importer-import', plugins_url( 'assets/import.css', dirname( __FILE__ ) ), array(), '20160412' );
 
 $this->render_header();
