@@ -3,6 +3,30 @@
  * Page for the actual import step.
  */
 
+$args = array(
+	'action' => 'wxr-import',
+	'id'     => $this->id,
+);
+$url = add_query_arg( urlencode_deep( $args ), admin_url( 'admin-ajax.php' ) );
+
+$script_data = array(
+	'count' => array(
+		'posts' => $data->post_count,
+		'media' => $data->media_count,
+		'users' => count( $data->users ),
+		'comments' => $data->comment_count,
+		'terms' => $data->term_count,
+	),
+	'url' => $url,
+	'strings' => array(
+		'complete' => __( 'Import complete!', 'wordpress-importer' ),
+	),
+);
+
+$url = plugins_url( 'assets/import.js', dirname( __FILE__ ) );
+wp_enqueue_script( 'wxr-importer-import', $url, array( 'jquery' ), '20160412', true );
+wp_enqueue_style( 'wxr-importer-import', plugins_url( 'assets/import.css', dirname( __FILE__ ) ), array(), '20160412' );
+
 $this->render_header();
 ?>
 <div class="welcome-panel">
@@ -129,146 +153,6 @@ $this->render_header();
 	</tbody>
 </table>
 
-<?php
-$args = array(
-	'action' => 'wxr-import',
-	'id'     => $this->id,
-);
-$url = add_query_arg( urlencode_deep( $args ), admin_url( 'admin-ajax.php' ) );
-
-$script_data = array(
-	'count' => array(
-		'posts' => $data->post_count,
-		'media' => $data->media_count,
-		'users' => count( $data->users ),
-		'comments' => $data->comment_count,
-		'terms' => $data->term_count,
-	),
-	'url' => $url,
-	'strings' => array(
-		'complete' => __( 'Import complete!', 'wordpress-importer' ),
-	),
-);
-?>
-<script>
-var wxrImport = {
-	complete: {
-		posts: 0,
-		media: 0,
-		users: 0,
-		comments: 0,
-		terms: 0,
-	},
-
-	updateDelta: function (type, delta) {
-		this.complete[ type ] += delta;
-
-		var self = this;
-		requestAnimationFrame(function () {
-			self.render();
-		});
-	},
-	updateProgress: function ( type, complete, total ) {
-		var text = complete + '/' + total;
-		document.getElementById( 'completed-' + type ).innerHTML = text;
-		var percent = parseInt( complete ) / parseInt( total );
-		document.getElementById( 'progress-' + type ).innerHTML = Math.round( percent * 100 ) + '%';
-		document.getElementById( 'progressbar-' + type ).value = percent * 100;
-	},
-	render: function () {
-		var types = Object.keys( this.complete );
-		var complete = 0;
-		var total = 0;
-		console.log(this);
-		for (var i = types.length - 1; i >= 0; i--) {
-			var type = types[i];
-			this.updateProgress( type, this.complete[ type ], this.data.count[ type ] );
-
-			complete += this.complete[ type ];
-			total += this.data.count[ type ];
-		}
-
-		this.updateProgress( 'total', complete, total );
-	}
-};
-wxrImport.data = <?php echo wp_json_encode( $script_data ) ?>;
-wxrImport.render();
-
-
-var evtSource = new EventSource( wxrImport.data.url );
-evtSource.onmessage = function ( message ) {
-	var data = JSON.parse( message.data );
-	switch ( data.action ) {
-		case 'updateDelta':
-			wxrImport.updateDelta( data.type, data.delta );
-			break;
-
-		case 'complete':
-			evtSource.close();
-			jQuery('#import-status-message').text( wxrImport.data.strings.complete );
-			break;
-	}
-};
-evtSource.addEventListener( 'log', function ( message ) {
-	var data = JSON.parse( message.data );
-	var row = document.createElement('tr');
-	var level = document.createElement( 'td' );
-	level.appendChild( document.createTextNode( data.level ) );
-	row.appendChild( level );
-
-	var message = document.createElement( 'td' );
-	message.appendChild( document.createTextNode( data.message ) );
-	row.appendChild( message );
-
-	jQuery('#import-log').append( row );
-});
-</script>
-<style>
-.import-status {
-	width: 100%;
-
-	font-size: 14px;
-	line-height: 16px;
-	margin-bottom: 1em;
-}
-.import-status thead th {
-	width: 32%;
-	text-align: left;
-	font-size: 16px;
-	padding-bottom: 1em;
-}
-.import-status thead th:first-child {
-	width: 36%;
-}
-
-.import-status th,
-.import-status td {
-	padding: 0 0 8px;
-	margin-bottom: 6px;
-}
-
-#import-log tbody {
-	max-height: 40em;
-}
-.import-status-indicator {
-	margin-bottom: 1em;
-}
-.import-status-indicator progress {
-	width: 100%;
-}
-.import-status-indicator .status {
-	text-align: center;
-}
-.import-status-indicator .status .dashicons {
-	color: #46B450;
-	font-size: 3rem;
-	height: auto;
-	width: auto;
-}
-#completed-total {
-	display: none;
-}
-</style>
 <?php
 
 $this->render_footer();

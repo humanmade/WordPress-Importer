@@ -1,0 +1,44 @@
+.import-status {
+	width: 100%;
+
+	font-size: 14px;
+	line-height: 16px;
+	margin-bottom: 1em;
+}
+.import-status thead th {
+	width: 32%;
+	text-align: left;
+	font-size: 16px;
+	padding-bottom: 1em;
+}
+.import-status thead th:first-child {
+	width: 36%;
+}
+
+.import-status th,
+.import-status td {
+	padding: 0 0 8px;
+	margin-bottom: 6px;
+}
+
+#import-log tbody {
+	max-height: 40em;
+}
+.import-status-indicator {
+	margin-bottom: 1em;
+}
+.import-status-indicator progress {
+	width: 100%;
+}
+.import-status-indicator .status {
+	text-align: center;
+}
+.import-status-indicator .status .dashicons {
+	color: #46B450;
+	font-size: 3rem;
+	height: auto;
+	width: auto;
+}
+#completed-total {
+	display: none;
+}
