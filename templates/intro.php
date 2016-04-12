@@ -5,6 +5,8 @@
 
 wp_enqueue_media();
 
+$this->render_header();
+
 ?>
 <div class="welcome-panel">
 	<div class="welcome-panel-content">
@@ -76,3 +78,7 @@ jQuery( function ($) {
 	});
 });
 </script>
+
+<?php
+
+$this->render_footer();

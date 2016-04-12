@@ -59,6 +59,8 @@ class WXR_Import_UI {
 	}
 
 	protected function display_error( WP_Error $err, $step = 0 ) {
+		$this->render_header();
+
 		echo '<p><strong>' . __( 'Sorry, there has been an error.', 'wordpress-importer' ) . '</strong><br />';
 		echo $err->get_error_message();
 		echo '</p>';
@@ -66,14 +68,14 @@ class WXR_Import_UI {
 			'<p><a class="button" href="%s">Try Again</a></p>',
 			esc_url( $this->get_url( $step ) )
 		);
+
+		$this->render_footer();
 	}
 
 	/**
 	 * Render the import page.
 	 */
 	public function dispatch() {
-		require __DIR__ . '/templates/header.php';
-
 		$step = empty( $_GET['step'] ) ? 0 : (int) $_GET['step'];
 		switch ( $step ) {
 			case 0:
@@ -88,7 +90,19 @@ class WXR_Import_UI {
 				$this->display_import_step();
 				break;
 		}
+	}
 
+	/**
+	 * Render the importer header.
+	 */
+	protected function render_header() {
+		require __DIR__ . '/templates/header.php';
+	}
+
+	/**
+	 * Render the importer footer.
+	 */
+	protected function render_footer() {
 		require __DIR__ . '/templates/footer.php';
 	}
 

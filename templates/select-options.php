@@ -3,6 +3,8 @@
  * Options for the import (step 1).
  */
 
+$this->render_header();
+
 $generator = $data->generator;
 if ( preg_match( '#^http://wordpress\.org/\?v=(\d+\.\d+\.\d+)$#', $generator, $matches ) ) {
 	$generator = sprintf( __( 'WordPress %s', 'wordpress-importer' ), $matches[1] );
@@ -132,3 +134,7 @@ if ( preg_match( '#^http://wordpress\.org/\?v=(\d+\.\d+\.\d+)$#', $generator, $m
 	<?php submit_button( __( 'Start Importing', 'wordpress-importer' ) ) ?>
 
 </form>
+
+<?php
+
+$this->render_footer();

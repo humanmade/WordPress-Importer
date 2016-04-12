@@ -2,6 +2,8 @@
 /**
  * Page for the actual import step.
  */
+
+$this->render_header();
 ?>
 <div class="welcome-panel">
 	<div class="welcome-panel-content">
@@ -267,3 +269,6 @@ evtSource.addEventListener( 'log', function ( message ) {
 	display: none;
 }
 </style>
+<?php
+
+$this->render_footer();
