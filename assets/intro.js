@@ -1,9 +1,8 @@
 (function ($) {
 	var options = importUploadSettings;
-	var uploader, itemTemplate, statusTemplate, errorTemplate;
+	var uploader, statusTemplate, errorTemplate;
 
 	// progress and success handlers for media multi uploads
-	var items = {};
 	var renderStatus = function ( attachment ) {
 		var attr = attachment.attributes;
 		var $status = jQuery.parseHTML( statusTemplate( attr ).trim() );
@@ -79,7 +78,6 @@
 	};
 
 	$(document).ready(function() {
-		itemTemplate = wp.template( 'import-uploading-file' );
 		statusTemplate = wp.template( 'import-upload-status' );
 		errorTemplate = wp.template( 'import-upload-error' );
 

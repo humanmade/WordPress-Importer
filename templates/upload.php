@@ -72,16 +72,6 @@
 }
 </style>
 
-<script type="text/html" id="tmpl-import-uploading-file">
-	<div class="media-item" id="media-item-{{ data.id }}">
-		<div class="progress">
-			<div class="percent">0%</div>
-			<div class="bar"></div>
-		</div>
-		<div class="filename original">{{ data.filename }}</div>
-	</div>
-</script>
-
 <script type="text/html" id="tmpl-import-upload-status">
 	<# if ( data.uploading ) { #>
 		<p><?php echo wp_kses( sprintf(
