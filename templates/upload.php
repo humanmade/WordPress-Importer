@@ -10,9 +10,9 @@
 
 	<div id="drag-drop-area">
 		<div class="drag-drop-inside drag-drop-selector">
-			<p class="drag-drop-info"><?php _e('Drop files here'); ?></p>
-			<p><?php _ex('or', 'Uploader: Drop files here - or - Select Files'); ?></p>
-			<p class="drag-drop-buttons"><input id="plupload-browse-button" type="button" value="<?php esc_attr_e('Select Files'); ?>" class="button" /></p>
+			<p class="drag-drop-info"><?php esc_html_e( 'Drop files here', 'wordpress-importer' ) ?></p>
+			<p><?php echo esc_html_x( 'or', 'Uploader: Drop files here - or - Select Files', 'wordpress-importer' ) ?></p>
+			<p class="drag-drop-buttons"><input id="plupload-browse-button" type="button" value="<?php esc_attr_e( 'Select Files', 'wordpress-importer' ) ?>" class="button" /></p>
 		</div>
 		<div class="drag-drop-inside drag-drop-status"></div>
 	</div>
@@ -37,10 +37,10 @@
 	do_action( 'pre-html-upload-ui' );
 	?>
 	<p id="async-upload-wrap">
-		<label class="screen-reader-text" for="async-upload"><?php _e('Upload'); ?></label>
+		<label class="screen-reader-text" for="async-upload"><?php esc_html_e( 'Upload', 'wordpress-importer' ) ?></label>
 		<input type="file" name="async-upload" id="async-upload" />
-		<?php submit_button( __( 'Upload' ), 'primary', 'html-upload', false ); ?>
-		<a href="#" onclick="try{top.tb_remove();}catch(e){}; return false;"><?php _e('Cancel'); ?></a>
+		<?php submit_button( __( 'Upload', 'wordpress-importer' ), 'primary', 'html-upload', false ); ?>
+		<a href="#" onclick="try{top.tb_remove();}catch(e){}; return false;"><?php esc_html_e( 'Cancel', 'wordpress-importer' ) ?></a>
 	</p>
 
 	<div class="clear"></div>
@@ -55,7 +55,7 @@
 </div>
 
 <p class="max-upload-size"><?php printf(
-	__( 'Maximum upload file size: %s.' ),
+	__( 'Maximum upload file size: %s.', 'wordpress-importer' ),
 	esc_html( size_format( $max_upload_size ) )
 ) ?></p>
 

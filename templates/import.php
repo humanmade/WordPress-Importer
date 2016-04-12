@@ -147,8 +147,8 @@ $this->render_header();
 <table id="import-log" class="widefat">
 	<thead>
 		<tr>
-			<th>Type</th>
-			<th>Message</th>
+			<th><?php esc_html_e( 'Type', 'wordpress-importer' ) ?></th>
+			<th><?php esc_html_e( 'Message', 'wordpress-importer' ) ?></th>
 		</tr>
 	</thead>
 	<tbody>

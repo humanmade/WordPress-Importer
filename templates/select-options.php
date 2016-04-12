@@ -92,16 +92,16 @@ if ( preg_match( '#^http://wordpress\.org/\?v=(\d+\.\d+\.\d+)$#', $generator, $m
 	</div>
 </div>
 
-<form action="<?php echo $this->get_url( 2 ) ?>" method="post">
+<form action="<?php echo esc_url( $this->get_url( 2 ) ) ?>" method="post">
 
 	<?php if ( ! empty( $data->users ) ) : ?>
 
 		<h3><?php esc_html_e( 'Assign Authors', 'wordpress-importer' ) ?></h3>
-		<p><?php _e( 'To make it easier for you to edit and save the imported content, you may want to reassign the author of the imported item to an existing user of this site. For example, you may want to import all the entries as <code>admin</code>s entries.', 'wordpress-importer' ) ?></p>
+		<p><?php esc_html_e( 'To make it easier for you to edit and save the imported content, you may want to reassign the author of the imported item to an existing user of this site. For example, you may want to import all the entries as <code>admin</code>s entries.', 'wordpress-importer' ) ?></p>
 
 		<?php if ( $this->allow_create_users() ): ?>
 
-			<p><?php printf( __( 'If a new user is created by WordPress, a new password will be randomly generated and the new user&#8217;s role will be set as %s. Manually changing the new user&#8217;s details will be necessary.', 'wordpress-importer' ), esc_html( get_option('default_role') ) ) ?></p>
+			<p><?php printf( esc_html__( 'If a new user is created by WordPress, a new password will be randomly generated and the new user&#8217;s role will be set as %s. Manually changing the new user&#8217;s details will be necessary.', 'wordpress-importer' ), esc_html( get_option('default_role') ) ) ?></p>
 
 		<?php endif; ?>
 
