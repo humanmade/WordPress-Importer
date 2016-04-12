@@ -59,7 +59,7 @@
 	};
 
 	// init and set the uploader
-	uploader_init = function() {
+	var init = function() {
 		var isIE = navigator.userAgent.indexOf('Trident/') != -1 || navigator.userAgent.indexOf('MSIE ') != -1;
 
 		// Make sure flash sends cookies (seems in IE it does whitout switching to urlstream mode)
@@ -81,7 +81,7 @@
 		statusTemplate = wp.template( 'import-upload-status' );
 		errorTemplate = wp.template( 'import-upload-error' );
 
-		uploader_init();
+		init();
 	});
 
 })( jQuery );
