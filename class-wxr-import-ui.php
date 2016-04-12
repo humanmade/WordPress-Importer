@@ -73,6 +73,14 @@ class WXR_Import_UI {
 	}
 
 	/**
+	 * Handle load event for the importer.
+	 */
+	public function on_load() {
+		// Skip outputting the header on our import page, so we can handle it.
+		$_GET['noheader'] = true;
+	}
+
+	/**
 	 * Render the import page.
 	 */
 	public function dispatch() {

@@ -42,6 +42,7 @@ function wpimportv2_init() {
 		array( $GLOBALS['wxr_importer'], 'dispatch' )
 	);
 
+	add_action( 'load-importer-wordpress', array( $GLOBALS['wxr_importer'], 'on_load' ) );
 	add_action( 'wp_ajax_wxr-import', array( $GLOBALS['wxr_importer'], 'stream_import' ) );
 }
 add_action( 'admin_init', 'wpimportv2_init' );
