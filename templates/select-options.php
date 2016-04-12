@@ -97,7 +97,10 @@ if ( preg_match( '#^http://wordpress\.org/\?v=(\d+\.\d+\.\d+)$#', $generator, $m
 	<?php if ( ! empty( $data->users ) ) : ?>
 
 		<h3><?php esc_html_e( 'Assign Authors', 'wordpress-importer' ) ?></h3>
-		<p><?php esc_html_e( 'To make it easier for you to edit and save the imported content, you may want to reassign the author of the imported item to an existing user of this site. For example, you may want to import all the entries as <code>admin</code>s entries.', 'wordpress-importer' ) ?></p>
+		<p><?php echo wp_kses(
+			__( 'To make it easier for you to edit and save the imported content, you may want to reassign the author of the imported item to an existing user of this site. For example, you may want to import all the entries as <code>admin</code>s entries.', 'wordpress-importer' ),
+			'data'
+		) ?></p>
 
 		<?php if ( $this->allow_create_users() ): ?>
 
