@@ -200,6 +200,12 @@ class WXR_Import_UI {
 		return true;
 	}
 
+	/**
+	 * Handle an async upload.
+	 *
+	 * Triggers on `async-upload.php?action=wxr-import-upload` to handle
+	 * Plupload requests from the importer.
+	 */
 	public function handle_async_upload() {
 		header( 'Content-Type: text/html; charset=' . get_option( 'blog_charset' ) );
 		send_nosniff_header();
@@ -254,6 +260,7 @@ class WXR_Import_UI {
 	/**
 	 * Handle a WXR file selected from the media browser.
 	 *
+	 * @param int|string $id Media item to import from.
 	 * @return bool|WP_Error True on success, error object otherwise.
 	 */
 	protected function handle_select( $id ) {
@@ -288,6 +295,14 @@ class WXR_Import_UI {
 		return true;
 	}
 
+	/**
+	 * Get preliminary data for an import file.
+	 *
+	 * This is a quick pre-parse to verify the file and grab authors from it.
+	 *
+	 * @param int $id Media item ID.
+	 * @return WXR_Import_Info|WP_Error Import info instance on success, error otherwise.
+	 */
 	protected function get_data_for_attachment( $id ) {
 		$existing = get_post_meta( $id, '_wxr_import_info' );
 		if ( ! empty( $existing ) ) {
@@ -347,6 +362,12 @@ class WXR_Import_UI {
 		require __DIR__ . '/templates/import.php';
 	}
 
+	/**
+	 * Run an import, and send an event-stream response.
+	 *
+	 * Streams logs and success messages to the browser to allow live status
+	 * and updates.
+	 */
 	public function stream_import() {
 		// Turn off PHP output compression
 		@ini_set( 'output_buffering', 'off' );
@@ -466,7 +487,7 @@ class WXR_Import_UI {
 	 * Display import options for an individual author. That is, either create
 	 * a new user based on import info or map to an existing user
 	 *
-	 * @param int $n Index for each author in the form
+	 * @param int $index Index for each author in the form
 	 * @param array $author Author information, e.g. login, display name, email
 	 */
 	protected function author_select( $index, $author ) {
@@ -553,9 +574,12 @@ class WXR_Import_UI {
 	}
 
 	/**
-	 * Map old author logins to local user IDs based on decisions made
-	 * in import options form. Can map to an existing user, create a new user
-	 * or falls back to the current user in case of error with either of the previous
+	 * Get mapping data from request data.
+	 *
+	 * Parses form request data into an internally usable mapping format.
+	 *
+	 * @param array $args Raw (UNSLASHED) POST data to parse.
+	 * @return array Map containing `mapping` and `slug_overrides` keys.
 	 */
 	protected function get_author_mapping( $args ) {
 		if ( ! isset( $args['imported_authors'] ) ) {
@@ -596,6 +620,11 @@ class WXR_Import_UI {
 		return compact( 'mapping', 'slug_overrides' );
 	}
 
+	/**
+	 * Emit a Server-Sent Events message.
+	 *
+	 * @param mixed $data Data to be JSON-encoded and sent in the message.
+	 */
 	protected function emit_sse_message( $data ) {
 		echo "event: message\n";
 		echo 'data: ' . wp_json_encode( $data ) . "\n\n";
@@ -606,6 +635,12 @@ class WXR_Import_UI {
 		flush();
 	}
 
+	/**
+	 * Send message when a post has been imported.
+	 *
+	 * @param int $id Post ID.
+	 * @param array $data Post data saved to the DB.
+	 */
 	public function imported_post( $id, $data ) {
 		$this->emit_sse_message( array(
 			'action' => 'updateDelta',
@@ -613,6 +648,10 @@ class WXR_Import_UI {
 			'delta'  => 1,
 		));
 	}
+
+	/**
+	 * Send message when a comment has been imported.
+	 */
 	public function imported_comment() {
 		$this->emit_sse_message( array(
 			'action' => 'updateDelta',
@@ -620,6 +659,10 @@ class WXR_Import_UI {
 			'delta'  => 1,
 		));
 	}
+
+	/**
+	 * Send message when a term has been imported.
+	 */
 	public function imported_term() {
 		$this->emit_sse_message( array(
 			'action' => 'updateDelta',
@@ -627,6 +670,10 @@ class WXR_Import_UI {
 			'delta'  => 1,
 		));
 	}
+
+	/**
+	 * Send message when a user has been imported.
+	 */
 	public function imported_user() {
 		$this->emit_sse_message( array(
 			'action' => 'updateDelta',
