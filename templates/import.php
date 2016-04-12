@@ -138,7 +138,6 @@ $this->render_header();
 			<div class="status">
 				<span id="completed-total" class="completed">0/0</span>
 				<span id="progress-total" class="progress">0%</span>
-				<span class="dashicons dashicons-yes"></span>
 			</div>
 		</div>
 	</div>
