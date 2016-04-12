@@ -501,8 +501,9 @@ class WXR_Import_UI {
 		}
 		echo ' <strong>' . esc_html( $name ) . '</strong><br />';
 
-		if ( $supports_extras )
+		if ( $supports_extras ) {
 			echo '<div style="margin-left:18px">';
+		}
 
 		$create_users = $this->allow_create_users();
 		if ( $create_users ) {
@@ -548,8 +549,9 @@ class WXR_Import_UI {
 			);
 		}
 
-		if ( $supports_extras )
+		if ( $supports_extras ) {
 			echo '</div>';
+		}
 	}
 
 	/**
