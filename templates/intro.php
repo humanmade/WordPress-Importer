@@ -40,45 +40,6 @@ $this->render_header();
 
 </div>
 
-<script>
-jQuery( function ($) {
-	// Create the media frame.
-	var frame = wp.media({
-		// Set the title of the modal.
-		title: "Select",
-
-		// Tell the modal to show only images.
-		library: {
-			type: '',
-			status: 'private',
-		},
-
-		// Customize the submit button.
-		button: {
-			// Set the text of the button.
-			text: "Import",
-			// Tell the button not to close the modal, since we're
-			// going to refresh the page when the image is selected.
-			close: false,
-		},
-	});
-	$('.upload-select').on( 'click', function ( event ) {
-		event.preventDefault();
-
-		frame.open();
-	});
-	frame.on( 'select', function () {
-		console.log( this, arguments );
-		var attachment = frame.state().get('selection').first().toJSON();
-		console.log( attachment );
-
-		var $input = $('#import-selected-id');
-		$input.val( attachment.id );
-		$input.parents('form')[0].submit();
-	});
-});
-</script>
-
 <?php
 
 $this->render_footer();
