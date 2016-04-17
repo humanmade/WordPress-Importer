@@ -9,11 +9,12 @@ Fast, lightweight, consistent. Pick three. :palm_tree: :sunglasses:
 
 ### Via the Dashboard
 
-1. Install the plugin directly from GitHub. ([Download as a ZIP.](https://github.com/humanmade/WordPress-Importer/archive/master.zip))
-2. Activate the plugin.
-3. Head to Tools &rarr; Import
-4. Select "WordPress (v2)"
-5. Follow the on-screen instructions.
+1. Install the old [WordPress Importer](https://wordpress.org/plugins/wordpress-importer/) plugin first.
+2. Then Install the plugin directly from GitHub. ([Download as a ZIP.](https://github.com/humanmade/WordPress-Importer/archive/master.zip))
+3. Activate the plugin.
+4. Head to Tools &rarr; Import
+5. Select "WordPress (v2)"
+6. Follow the on-screen instructions.
 
 ### Via the CLI
 
