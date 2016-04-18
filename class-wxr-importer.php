@@ -73,6 +73,7 @@ class WXR_Importer extends WP_Importer {
 	 *     @var bool $update_attachment_guids Should attachment GUIDs be updated to the new URL? (True updates the GUID, which keeps compatibility with v1, false doesn't update, and allows deduplication and reimporting. Default is false.)
 	 *     @var bool $fetch_attachments Fetch attachments from the remote server. (True fetches and creates attachment posts, false skips attachments. Default is false.)
 	 *     @var bool $aggressive_url_search Should we search/replace for URLs aggressively? (True searches all posts' content for old URLs and replaces, false checks for `<img class="wp-image-*">` only. Default is false.)
+	 *     @var int $default_author User ID to use if author is missing or invalid. (Default is null, which leaves posts unassigned.)
 	 * }
 	 */
 	public function __construct( $options = array() ) {
@@ -97,6 +98,7 @@ class WXR_Importer extends WP_Importer {
 			'update_attachment_guids'   => false,
 			'fetch_attachments'         => false,
 			'aggressive_url_search'     => false,
+			'default_author'            => null,
 		) );
 	}
 
@@ -129,6 +131,122 @@ class WXR_Importer extends WP_Importer {
 		}
 
 		return $reader;
+	}
+
+	/**
+	 * The main controller for the actual import stage.
+	 *
+	 * @param string $file Path to the WXR file for importing
+	 */
+	public function get_preliminary_information( $file ) {
+		// Let's run the actual importer now, woot
+		$reader = $this->get_reader( $file );
+		if ( is_wp_error( $reader ) ) {
+			return $reader;
+		}
+
+		// Set the version to compatibility mode first
+		$this->version = '1.0';
+
+		// Start parsing!
+		$data = new WXR_Import_Info();
+		while ( $reader->read() ) {
+			// Only deal with element opens
+			if ( $reader->nodeType !== XMLReader::ELEMENT ) {
+				continue;
+			}
+
+			switch ( $reader->name ) {
+				case 'wp:wxr_version':
+					// Upgrade to the correct version
+					$this->version = $reader->readString();
+
+					if ( version_compare( $this->version, self::MAX_WXR_VERSION, '>' ) ) {
+						$this->logger->warning( sprintf(
+							__( 'This WXR file (version %s) is newer than the importer (version %s) and may not be supported. Please consider updating.', 'wordpress-importer' ),
+							$this->version,
+							self::MAX_WXR_VERSION
+						) );
+					}
+
+					// Handled everything in this node, move on to the next
+					$reader->next();
+					break;
+
+				case 'generator':
+					$data->generator = $reader->readString();
+					$reader->next();
+					break;
+
+				case 'title':
+					$data->title = $reader->readString();
+					$reader->next();
+					break;
+
+				case 'wp:base_site_url':
+					$data->siteurl = $reader->readString();
+					$reader->next();
+					break;
+
+				case 'wp:base_blog_url':
+					$data->home = $reader->readString();
+					$reader->next();
+					break;
+
+				case 'wp:author':
+					$node = $reader->expand();
+
+					$parsed = $this->parse_author_node( $node );
+					if ( is_wp_error( $parsed ) ) {
+						$this->log_error( $parsed );
+
+						// Skip the rest of this post
+						$reader->next();
+						break;
+					}
+
+					$data->users[] = $parsed;
+
+					// Handled everything in this node, move on to the next
+					$reader->next();
+					break;
+
+				case 'item':
+					$node = $reader->expand();
+					$parsed = $this->parse_post_node( $node );
+					if ( is_wp_error( $parsed ) ) {
+						$this->log_error( $parsed );
+
+						// Skip the rest of this post
+						$reader->next();
+						break;
+					}
+
+					if ( $parsed['data']['post_type'] === 'attachment' ) {
+						$data->media_count++;
+					} else {
+						$data->post_count++;
+					}
+					$data->comment_count += count( $parsed['comments'] );
+
+					// Handled everything in this node, move on to the next
+					$reader->next();
+					break;
+
+				case 'wp:category':
+				case 'wp:tag':
+				case 'wp:term':
+					$data->term_count++;
+
+					// Handled everything in this node, move on to the next
+					$reader->next();
+					break;
+			}
+		}
+
+		$data->version = $this->version;
+
+		return $data;
 	}
 
 	/**
@@ -171,7 +289,7 @@ class WXR_Importer extends WP_Importer {
 					$reader->next();
 					break;
 
-				case 'wp:wp_author':
+				case 'wp:author':
 					$node = $reader->expand();
 
 					$parsed = $this->parse_author_node( $node );
@@ -268,7 +386,7 @@ class WXR_Importer extends WP_Importer {
 					$reader->next();
 					break;
 
-				case 'wp:wp_author':
+				case 'wp:author':
 					$node = $reader->expand();
 
 					$parsed = $this->parse_author_node( $node );
@@ -665,7 +783,10 @@ class WXR_Importer extends WP_Importer {
 
 		// Map the author, or mark it as one we need to fix
 		$author = sanitize_user( $data['post_author'], true );
-		if ( isset( $this->mapping['user_slug'][ $author ] ) ) {
+		if ( empty( $author ) ) {
+			// Missing or invalid author, use default if available.
+			$data['post_author'] = $this->options['default_author'];
+		} elseif ( isset( $this->mapping['user_slug'][ $author ] ) ) {
 			$data['post_author'] = $this->mapping['user_slug'][ $author ];
 		}
 		else {
@@ -734,6 +855,17 @@ class WXR_Importer extends WP_Importer {
 				$post_type_object->labels->singular_name
 			) );
 			$this->logger->debug( $post_id->get_error_message() );
+
+			/**
+			 * Post processing failed.
+			 *
+			 * @param WP_Error $post_id Error object.
+			 * @param array $data Raw data imported for the post.
+			 * @param array $meta Raw meta data, already processed by {@see process_post_meta}.
+			 * @param array $comments Raw comment data, already processed by {@see process_comments}.
+			 * @param array $terms Raw term data, already processed.
+			 */
+			do_action( 'wxr_importer.process_failed.post', $post_id, $data, $meta, $comments, $terms );
 			return false;
 		}
 
@@ -1215,6 +1347,16 @@ class WXR_Importer extends WP_Importer {
 				add_comment_meta( $comment_id, wp_slash( $meta_item['key'] ), wp_slash( $value ) );
 			}
 
+			/**
+			 * Post processing completed.
+			 *
+			 * @param int $post_id New post ID.
+			 * @param array $comment Raw data imported for the comment.
+			 * @param array $meta Raw meta data, already processed by {@see process_post_meta}.
+			 * @param array $post_id Parent post ID.
+			 */
+			do_action( 'wxr_importer.processed.comment', $comment_id, $comment, $meta, $post_id );
+
 			$num_comments++;
 		}
 
@@ -1375,6 +1517,14 @@ class WXR_Importer extends WP_Importer {
 				$userdata['user_login']
 			) );
 			$this->logger->debug( $user_id->get_error_message() );
+
+			/**
+			 * User processing failed.
+			 *
+			 * @param WP_Error $user_id Error object.
+			 * @param array $userdata Raw data imported for the user.
+			 */
+			do_action( 'wxr_importer.process_failed.user', $user_id, $userdata );
 			return false;
 		}
 
@@ -1394,6 +1544,13 @@ class WXR_Importer extends WP_Importer {
 		) );
 
 		// TODO: Implement meta handling once WXR includes it
+		/**
+		 * User processing completed.
+		 *
+		 * @param int $user_id New user ID.
+		 * @param array $userdata Raw data imported for the user.
+		 */
+		do_action( 'wxr_importer.processed.user', $user_id, $userdata );
 	}
 
 	protected function parse_term_node( $node, $type = 'term' ) {
@@ -1523,6 +1680,15 @@ class WXR_Importer extends WP_Importer {
 			) );
 			$this->logger->debug( $result->get_error_message() );
 			do_action( 'wp_import_insert_term_failed', $result, $data );
+
+			/**
+			 * Term processing failed.
+			 *
+			 * @param WP_Error $result Error object.
+			 * @param array $data Raw data imported for the term.
+			 * @param array $meta Meta data supplied for the term.
+			 */
+			do_action( 'wxr_importer.process_failed.term', $result, $data, $meta );
 			return false;
 		}
 
@@ -1543,6 +1709,14 @@ class WXR_Importer extends WP_Importer {
 		) );
 
 		do_action( 'wp_import_insert_term', $term_id, $data );
+
+		/**
+		 * Term processing completed.
+		 *
+		 * @param int $term_id New term ID.
+		 * @param array $data Raw data imported for the term.
+		 */
+		do_action( 'wxr_importer.processed.term', $term_id, $data );
 	}
 
 	/**

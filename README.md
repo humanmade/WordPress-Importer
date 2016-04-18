@@ -7,19 +7,31 @@ Fast, lightweight, consistent. Pick three. :palm_tree: :sunglasses:
 
 ## How do I use it?
 
-Currently, there's no UI in the Dashboard, so you'll need to run it via WP-CLI. Simply activate the plugin, then run:
+### Via the Dashboard
+
+1. Install the plugin directly from GitHub. ([Download as a ZIP.](https://github.com/humanmade/WordPress-Importer/archive/master.zip))
+2. Activate the plugin.
+3. Head to Tools &rarr; Import
+4. Select "WordPress (v2)"
+5. Follow the on-screen instructions.
+
+### Via the CLI
+
+The plugin also includes CLI commands out of the box.
+
+Simply activate the plugin, then run:
 
 ```sh
 wp wxr-importer import import-file.xml
 ```
 
-If you want to get more info, you can set the `--verbose` flag; run `wp help wxr-importer import` to discover what you can do.
+Run `wp help wxr-importer import` to discover what you can do via the CLI.
 
 ## Current Status
 
 The current major items are currently missing or suboptimal in the Importer:
 
-* **Web UI** ([#1](https://github.com/humanmade/WordPress-Importer/issues/1)): Right now, there's essentially *no* web interface for the importer. This sucks.
+* [x] **Web UI** ([#1](https://github.com/humanmade/WordPress-Importer/issues/1)): ~~Right now, there's essentially *no* web interface for the importer. This sucks.~~ Done!
 
 * **Automatic Testing**: There's no unit tests. Boooooo.
 

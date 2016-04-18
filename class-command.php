@@ -13,6 +13,9 @@ class WXR_Import_Command extends WP_CLI_Command {
 	 * : Should we print verbose statements?
 	 *   (No value for 'info'; or one of 'emergency', 'alert', 'critical',
 	 *   'error', 'warning', 'notice', 'info', 'debug')
+	 *
+	 * [--default-author=<id>]
+	 * : Default author ID to use if invalid user is found in the import data.
 	 */
 	public function import( $args, $assoc_args ) {
 		$logger = new WP_Importer_Logger_CLI();
@@ -33,6 +36,13 @@ class WXR_Import_Command extends WP_CLI_Command {
 		$options = array(
 			'fetch_attachments' => true,
 		);
+		if ( isset( $assoc_args['default-author'] ) ) {
+			$options['default_author'] = absint( $assoc_args['default-author'] );
+
+			if ( ! get_user_by( 'ID', $options['default_author'] ) ) {
+				WP_CLI::error( 'Invalid default author ID specified.' );
+			}
+		}
 		$importer = new WXR_Importer( $options );
 		$importer->set_logger( $logger );
 		$importer->import( realpath( $args[0] ) );
