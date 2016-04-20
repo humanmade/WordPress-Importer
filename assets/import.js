@@ -19,10 +19,11 @@
 		updateProgress: function ( type, complete, total ) {
 			var text = complete + '/' + total;
 			document.getElementById( 'completed-' + type ).innerHTML = text;
+      total = parseInt( total );
       if ( 0 == total ) {
         total = 1;
       }
-  		var percent = parseInt( complete ) / parseInt( total );
+  		var percent = parseInt( complete ) / total;
 			document.getElementById( 'progress-' + type ).innerHTML = Math.round( percent * 100 ) + '%';
 			document.getElementById( 'progressbar-' + type ).value = percent * 100;
 		},
