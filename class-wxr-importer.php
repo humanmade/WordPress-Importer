@@ -902,7 +902,7 @@ class WXR_Importer extends WP_Importer {
 				$key = sha1( $taxonomy . ':' . $term['slug'] );
 
 				if ( isset( $this->mapping['term'][ $key ] ) ) {
-					$term_ids[ $taxonomy ][] = $this->mapping['term'][ $key ];
+					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
 				}
 				else {
 					$meta[] = array( 'key' => '_wxr_import_term', 'value' => $term );
