@@ -18,7 +18,6 @@
 	"minimum-stability" : "dev",
 	"prefer-stable"     : true,
 	"support"           : {
-		"email"  : "me@ryanmccue.info",
 		"wiki"   : "https://github.com/humanmade/WordPress-Importer/wiki",
 		"source" : "https://github.com/humanmade/WordPress-Importer/releases"
 	},
