@@ -1,7 +1,7 @@
 {
 	"name"              : "humanmade/wordpress-importer",
 	"description"       : "WordPress importer plugin",
-	"license"           : "MIT",
+	"license"           : "GPLv2",
 	"authors"           : [
 		{
 			"name"     : "Contributors",
