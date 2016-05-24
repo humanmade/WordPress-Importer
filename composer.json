@@ -19,7 +19,8 @@
 	"prefer-stable"     : true,
 	"support"           : {
 		"wiki"   : "https://github.com/humanmade/WordPress-Importer/wiki",
-		"source" : "https://github.com/humanmade/WordPress-Importer/releases"
+		"source" : "https://github.com/humanmade/WordPress-Importer/releases",
+		"issues" : "https://github.com/humanmade/WordPress-Importer/issues"
 	},
 	"keywords" : [
 		"wordpress",
