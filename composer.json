@@ -1,6 +1,6 @@
 {
-	"name"              : "wordpress/importer",
-	"description"       : "WordPress importer",
+	"name"              : "humanmade/wordpress-importer",
+	"description"       : "WordPress importer plugin",
 	"license"           : "MIT",
 	"authors"           : [
 		{
