@@ -4,14 +4,8 @@
 	"license"           : "MIT",
 	"authors"           : [
 		{
-			"name"     : "Ryan McCue",
-			"email"    : "me@ryanmccue.info",
-			"homepage" : "http://ryanmccue.info/"
-		},
-		{
-			"name"     : "Franz Josef Kaiser",
-			"email"    : "wecodemore@gmail.com",
-			"homepage" : "http://unserkaiser.com"
+			"name"     : "Contributors",
+			"homepage" : "https://github.com/humanmade/WordPress-Importer/graphs/contributors"
 		}
 	],
 	"type"              : "wordpress-plugin",
