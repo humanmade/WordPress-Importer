@@ -21,6 +21,11 @@
 		"wiki"   : "https://github.com/humanmade/WordPress-Importer/wiki",
 		"source" : "https://github.com/humanmade/WordPress-Importer/releases"
 	},
+	"keywords" : [
+		"wordpress",
+		"plugin",
+		"importer"
+	],
 	"require"           : {
 		"php"                 : ">=5.2",
 		"composer/installers" : "~1.0"
