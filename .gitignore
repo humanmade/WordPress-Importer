@@ -1,5 +1,3 @@
-# OS
-.DS_Store
-
-# IDEs
-/.idea
+# Package Managers
+## Composer
+/vendor
