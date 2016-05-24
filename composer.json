@@ -1,0 +1,40 @@
+{
+	"name"              : "humanmade/wordpress-importer",
+	"description"       : "WordPress importer plugin",
+	"license"           : "GPLv2",
+	"authors"           : [
+		{
+			"name"     : "Contributors",
+			"homepage" : "https://github.com/humanmade/WordPress-Importer/graphs/contributors"
+		}
+	],
+	"type"              : "wordpress-plugin",
+	"minimum-stability" : "dev",
+	"prefer-stable"     : true,
+	"support"           : {
+		"wiki"   : "https://github.com/humanmade/WordPress-Importer/wiki",
+		"source" : "https://github.com/humanmade/WordPress-Importer/releases",
+		"issues" : "https://github.com/humanmade/WordPress-Importer/issues"
+	},
+	"keywords" : [
+		"wordpress",
+		"plugin",
+		"importer"
+	],
+	"require"           : {
+		"php"                 : ">=5.2",
+		"composer/installers" : "~1.0"
+	},
+	"autoload"          : { },
+	"autoload-dev"      : { },
+	"extra"             : {
+		"branch-alias"    : {
+			"dev-dev" : "0.1.x-dev"
+		},
+		"installer-paths" : {
+			"vendor/{$name}" : [
+				"type:wordpress-plugin"
+			]
+		}
+	}
+}
