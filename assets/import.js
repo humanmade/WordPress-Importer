@@ -20,7 +20,7 @@
 			var text = complete + '/' + total;
 			document.getElementById( 'completed-' + type ).innerHTML = text;
 			total = parseInt( total, 10 );
-			if ( 0 === total || isNan( total ) {
+			if ( 0 === total || isNaN( total ) ) {
 				total = 1;
 			}
 			var percent = parseInt( complete, 10 ) / total;
