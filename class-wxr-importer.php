@@ -764,6 +764,9 @@ class WXR_Importer extends WP_Importer {
 				$post_type_object->labels->singular_name,
 				$data['post_title']
 			) );
+			
+			// Even though this post already exists, new comments might need importing
+    			$this->process_comments( $comments, $original_id, $data, $post_exists );
 
 			return false;
 		}
@@ -1248,10 +1251,7 @@ class WXR_Importer extends WP_Importer {
 	 * @param array $post Post data.
 	 * @return int|WP_Error Number of comments imported on success, error otherwise.
 	 */
-	protected function process_comments( $comments, $post_id, $post ) {
-
-		// TODO: this should use the real value for delta updating
-		$post_exists = false;
+	protected function process_comments( $comments, $post_id, $post, $post_exists = false ) {
 
 		$comments = apply_filters( 'wp_import_post_comments', $comments, $post_id, $post );
 		if ( empty( $comments ) ) {
