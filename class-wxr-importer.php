@@ -1281,7 +1281,7 @@ class WXR_Importer extends WP_Importer {
 
 			// if this is a new post we can skip the comment_exists() check
 			// TODO: Check comment_exists for performance
-			if ( $post_exists && $existing = $this->comment_exists( $comment ) ) {
+			if ( $post_exists && $exists = $this->comment_exists( $comment ) ) {
 				$this->mapping['comment'][ $original_id ] = $exists;
 				continue;
 			}
@@ -2140,7 +2140,7 @@ class WXR_Importer extends WP_Importer {
 
 		foreach ( $posts as $item ) {
 			$exists_key = sha1( $item->comment_author . ':' . $item->comment_date );
-			$this->exists['post'][ $exists_key ] = $item->comment_ID;
+			$this->exists['comment'][ $exists_key ] = $item->comment_ID;
 		}
 	}
 
