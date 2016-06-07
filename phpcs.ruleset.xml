@@ -34,6 +34,8 @@
 		assignment in conditionals.
 		-->
 		<exclude name="WordPress.PHP.YodaConditions" />
-		<include name="MediaWiki.ControlStructures.AssignmentInControlStructures" />
 	</rule>
+
+	<!-- Ban inline assignment in control structures. See note on Yoda condtions. -->
+	<rule ref="PSR2R.ControlStructures.NoInlineAssignment" />
 </ruleset>
