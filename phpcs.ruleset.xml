@@ -12,5 +12,6 @@
 		<exclude name="WordPress.VIP.ValidatedSanitizedInput" />
 		<exclude name="WordPress.CSRF.NonceVerification" />
 		<exclude name="WordPress.XSS.EscapeOutput" />
+		<exclude name="WordPress.PHP.YodaConditions" />
 	</rule>
 </ruleset>
