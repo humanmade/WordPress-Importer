@@ -25,13 +25,13 @@ class WXR_Import_UI {
 		// Check for updates too.
 		$updates = get_plugin_updates();
 		$basename = plugin_basename( __FILE__ );
-		if ( empty( $updates[$basename] ) ) {
+		if ( empty( $updates[ $basename ] ) ) {
 			return;
 		}
 
 		$message = sprintf(
 			esc_html__( 'A new version of this importer is available. Please update to version %s to ensure compatibility with newer export files.', 'wordpress-importer' ),
-			$updates[$basename]->update->new_version
+			$updates[ $basename ]->update->new_version
 		);
 
 		$args = array(
@@ -249,7 +249,7 @@ class WXR_Import_UI {
 				'data'    => array(
 					'message'  => __( 'You do not have permission to upload files.' ),
 					'filename' => $_FILES['import']['name'],
-				)
+				),
 			) );
 
 			exit;
@@ -262,7 +262,7 @@ class WXR_Import_UI {
 				'data'    => array(
 					'message'  => $file->get_error_message(),
 					'filename' => $_FILES['import']['name'],
-				)
+				),
 			) );
 
 			wp_die();
@@ -376,7 +376,7 @@ class WXR_Import_UI {
 		update_post_meta( $this->id, '_wxr_import_settings', $settings );
 
 		// Time to run the import!
-		set_time_limit(0);
+		set_time_limit( 0 );
 
 		// Ensure we're not buffered.
 		wp_ob_end_flush_all();
@@ -416,10 +416,10 @@ class WXR_Import_UI {
 		}
 
 		// 2KB padding for IE
-		echo ':' . str_repeat(' ', 2048) . "\n\n";
+		echo ':' . str_repeat( ' ', 2048 ) . "\n\n";
 
 		// Time to run the import!
-		set_time_limit(0);
+		set_time_limit( 0 );
 
 		// Ensure we're not buffered.
 		wp_ob_end_flush_all();
@@ -555,7 +555,7 @@ class WXR_Import_UI {
 		wp_dropdown_users( array(
 			'name' => sprintf( 'user_map[%d]', $index ),
 			'multi' => true,
-			'show_option_all' => __( '- Select -', 'wordpress-importer' )
+			'show_option_all' => __( '- Select -', 'wordpress-importer' ),
 		));
 
 		printf(
@@ -624,10 +624,10 @@ class WXR_Import_UI {
 		$slug_overrides = array();
 
 		foreach ( (array) $args['imported_authors'] as $i => $old_login ) {
-			$old_id = isset( $old_ids[$i] ) ? (int) $old_ids[$i] : false;
+			$old_id = isset( $old_ids[ $i ] ) ? (int) $old_ids[ $i ] : false;
 
-			if ( isset( $map[$i] ) ) {
-				$user = get_user_by( 'id', (int) $map[$i] );
+			if ( isset( $map[ $i ] ) ) {
+				$user = get_user_by( 'id', (int) $map[ $i ] );
 
 				if ( isset( $user->ID ) ) {
 					$mapping[] = array(
@@ -656,7 +656,7 @@ class WXR_Import_UI {
 		echo 'data: ' . wp_json_encode( $data ) . "\n\n";
 
 		// Extra padding.
-		echo ':' . str_repeat(' ', 2048) . "\n\n";
+		echo ':' . str_repeat( ' ', 2048 ) . "\n\n";
 
 		flush();
 	}
