@@ -1,0 +1,44 @@
+language: php
+
+matrix:
+  fast_finish: true
+  include:
+    - php: 5.2
+    - php: 5.3
+    - php: 5.4
+    - php: 5.5
+    - php: 5.6
+    - php: 7.0
+    - php: hhvm
+
+    - php: 5.6
+      env: WP_TRAVISCI="travis:phpvalidate"
+
+  allow_failures:
+    - php: hhvm
+
+
+env:
+  global:
+    - WP_TRAVISCI="travis:phpunit"
+
+# Clones WordPress and configures our testing environment.
+before_script:
+  # Setup Coveralls
+  - phpenv local 5.5
+  - composer install --no-interaction
+  - phpenv local --unset
+
+  - bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 latest
+
+  - cd $TRAVIS_BUILD_DIR
+  - npm install -g npm
+  - npm install -g grunt-cli
+  - npm install
+
+script:
+  - grunt $WP_TRAVISCI
+
+after_script:
+  # Push coverage off to Codecov
+  - bash <(curl -s https://codecov.io/bash)

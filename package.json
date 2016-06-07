@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-phpcs": "^0.4.0",
+    "phplint": "^1.6.1"
+  }
+}
