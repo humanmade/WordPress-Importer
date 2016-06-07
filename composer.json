@@ -25,6 +25,10 @@
 		"php"                 : ">=5.2",
 		"composer/installers" : "~1.0"
 	},
+	"require-dev": {
+		"squizlabs/php_codesniffer": "2.3.4",
+		"wp-coding-standards/wpcs": "0.6.0"
+	},
 	"autoload"          : { },
 	"autoload-dev"      : { },
 	"extra"             : {
@@ -36,5 +40,9 @@
 				"type:wordpress-plugin"
 			]
 		}
+	},
+	"scripts": {
+		"post-install-cmd": "\"vendor/bin/phpcs\" --config-set installed_paths vendor/wp-coding-standards/wpcs",
+		"post-update-cmd" : "\"vendor/bin/phpcs\" --config-set installed_paths vendor/wp-coding-standards/wpcs"
 	}
 }
