@@ -10,6 +10,7 @@
 		<exclude name="WordPress.VIP.RestrictedVariables" />
 		<exclude name="WordPress.VIP.SuperGlobalInputUsage" />
 		<exclude name="WordPress.VIP.ValidatedSanitizedInput" />
+		<exclude name="WordPress.VIP.DirectDatabaseQuerySniff" />
 		<exclude name="WordPress.CSRF.NonceVerification" />
 		<exclude name="WordPress.XSS.EscapeOutput" />
 		<exclude name="WordPress.PHP.YodaConditions" />
