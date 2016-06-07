@@ -38,7 +38,7 @@ function wpimportv2_init() {
 	register_importer(
 		'wordpress',
 		'WordPress (v2)',
-		__('Import <strong>posts, pages, comments, custom fields, categories, and tags</strong> from a WordPress export (WXR) file.', 'wordpress-importer'),
+		__( 'Import <strong>posts, pages, comments, custom fields, categories, and tags</strong> from a WordPress export (WXR) file.', 'wordpress-importer' ),
 		array( $GLOBALS['wxr_importer'], 'dispatch' )
 	);
 

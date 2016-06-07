@@ -48,10 +48,12 @@ $this->render_header();
 				<tr>
 					<td>
 						<span class="dashicons dashicons-admin-post"></span>
-						<?php echo esc_html( sprintf(
+						<?php
+						echo esc_html( sprintf(
 							_n( '%d post (including CPTs)', '%d posts (including CPTs)', $data->post_count, 'wordpress-importer' ),
 							$data->post_count
-						)) ?>
+						));
+						?>
 					</td>
 					<td>
 						<span id="completed-posts" class="completed">0/0</span>
@@ -64,10 +66,12 @@ $this->render_header();
 				<tr>
 					<td>
 						<span class="dashicons dashicons-admin-media"></span>
-						<?php echo esc_html( sprintf(
+						<?php
+						echo esc_html( sprintf(
 							_n( '%d media item', '%d media items', $data->media_count, 'wordpress-importer' ),
 							$data->media_count
-						)) ?>
+						));
+						?>
 					</td>
 					<td>
 						<span id="completed-media" class="completed">0/0</span>
@@ -81,10 +85,12 @@ $this->render_header();
 				<tr>
 					<td>
 						<span class="dashicons dashicons-admin-users"></span>
-						<?php echo esc_html( sprintf(
+						<?php
+						echo esc_html( sprintf(
 							_n( '%d user', '%d users', count( $data->users ), 'wordpress-importer' ),
 							count( $data->users )
-						)) ?>
+						));
+						?>
 					</td>
 					<td>
 						<span id="completed-users" class="completed">0/0</span>
@@ -98,10 +104,12 @@ $this->render_header();
 				<tr>
 					<td>
 						<span class="dashicons dashicons-admin-comments"></span>
-						<?php echo esc_html( sprintf(
+						<?php
+						echo esc_html( sprintf(
 							_n( '%d comment', '%d comments', $data->comment_count, 'wordpress-importer' ),
 							$data->comment_count
-						)) ?>
+						));
+						?>
 					</td>
 					<td>
 						<span id="completed-comments" class="completed">0/0</span>
@@ -115,10 +123,12 @@ $this->render_header();
 				<tr>
 					<td>
 						<span class="dashicons dashicons-category"></span>
-						<?php echo esc_html( sprintf(
+						<?php
+						echo esc_html( sprintf(
 							_n( '%d term', '%d terms', $data->term_count, 'wordpress-importer' ),
 							$data->term_count
-						)) ?>
+						));
+						?>
 					</td>
 					<td>
 						<span id="completed-terms" class="completed">0/0</span>
