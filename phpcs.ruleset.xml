@@ -13,6 +13,27 @@
 		<exclude name="WordPress.VIP.DirectDatabaseQuery" />
 		<exclude name="WordPress.CSRF.NonceVerification" />
 		<exclude name="WordPress.XSS.EscapeOutput" />
+
+		<!--
+		OK, real talk right now. Yoda conditions are ridiculous.
+
+		The fundamental problem that Yoda conditions attempts to solve is:
+		the equality operator is very close to the assignment operator.
+		It's easy to mess up and accidentally assign to the variable you're
+		trying to check.
+
+		Here's the thing though. Yoda conditions just don't read correctly
+		in the code flow. They require you to change the way you think
+		about the control flow.
+
+		Rather than forcing every conditional to be backwards, why not ban
+		assignment from conditionals? You never really *need* to assign in
+		a conditional.
+
+		So, here's where I stand: no to Yoda conditions. Yes to banning
+		assignment in conditionals.
+		-->
 		<exclude name="WordPress.PHP.YodaConditions" />
+		<include name="MediaWiki.ControlStructures.AssignmentInControlStructures" />
 	</rule>
 </ruleset>

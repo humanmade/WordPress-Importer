@@ -2073,7 +2073,7 @@ class WXR_Importer extends WP_Importer {
 
 	// return the difference in length between two strings
 	function cmpr_strlen( $a, $b ) {
-		return strlen($b) - strlen($a);
+		return strlen( $b ) - strlen( $a );
 	}
 
 	/**
