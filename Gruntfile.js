@@ -27,6 +27,7 @@ module.exports = function( grunt ) {
 
 		phpunit: {
 			cmd: 'phpunit',
+			args: [ '-c', 'phpunit.xml.dist' ],
 		}
 
 	} );
