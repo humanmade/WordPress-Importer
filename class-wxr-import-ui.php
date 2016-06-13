@@ -94,7 +94,6 @@ class WXR_Import_UI {
 				$this->display_author_step();
 				break;
 			case 2:
-				check_admin_referer( 'import-wordpress' );
 				$this->display_import_step();
 				break;
 		}
@@ -367,6 +366,15 @@ class WXR_Import_UI {
 	 */
 	protected function display_import_step() {
 		$args = wp_unslash( $_POST );
+		if ( ! isset( $args['import_id'] ) ) {
+			// Missing import ID.
+			$error = new WP_Error( 'wxr_importer.import.missing_id', __( 'Missing import file ID from request.', 'wordpress-importer' ) );
+			$this->display_error( $error );
+			return;
+		}
+
+		// Check the nonce.
+		check_admin_referer( sprintf( 'wxr.import:%d', (int) $args['import_id'] ) );
 
 		$this->id = (int) $args['import_id'];
 		$file = get_attached_file( $this->id );

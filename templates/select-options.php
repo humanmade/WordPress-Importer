@@ -150,7 +150,7 @@ if ( preg_match( '#^http://wordpress\.org/\?v=(\d+\.\d+\.\d+)$#', $generator, $m
 	<?php endif; ?>
 
 	<input type="hidden" name="import_id" value="<?php echo esc_attr( $this->id ) ?>" />
-	<?php wp_nonce_field( 'import-wordpress' ) ?>
+	<?php wp_nonce_field( sprintf( 'wxr.import:%d', $this->id ) ) ?>
 
 	<?php submit_button( __( 'Start Importing', 'wordpress-importer' ) ) ?>
 
