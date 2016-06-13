@@ -1281,9 +1281,12 @@ class WXR_Importer extends WP_Importer {
 
 			// if this is a new post we can skip the comment_exists() check
 			// TODO: Check comment_exists for performance
-			if ( $post_exists && $exists = $this->comment_exists( $comment ) ) {
-				$this->mapping['comment'][ $original_id ] = $exists;
-				continue;
+			if ( $post_exists ) {
+				$existing = $this->comment_exists( $comment );
+				if ( $existing ) {
+					$this->mapping['comment'][ $original_id ] = $exists;
+					continue;
+				}
 			}
 
 			// Remove meta from the main array
@@ -1630,7 +1633,8 @@ class WXR_Importer extends WP_Importer {
 		$parent_id   = isset( $data['parent'] )  ? (int) $data['parent']  : 0;
 
 		$mapping_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
-		if ( $existing = $this->term_exists( $data ) ) {
+		$existing = $this->term_exists( $data );
+		if ( $existing ) {
 			$this->mapping['term'][ $mapping_key ] = $existing;
 			$this->mapping['term_id'][ $original_id ] = $existing;
 			return false;
