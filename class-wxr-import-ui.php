@@ -183,7 +183,7 @@ class WXR_Import_UI {
 	 */
 	protected function display_author_step() {
 		if ( isset( $_REQUEST['id'] ) ) {
-			$err = $this->handle_select( $_REQUEST['id'] );
+			$err = $this->handle_select( wp_unslash( $_REQUEST['id'] ) );
 		} else {
 			$err = $this->handle_upload();
 		}
@@ -243,12 +243,15 @@ class WXR_Import_UI {
 		 * See https://core.trac.wordpress.org/ticket/31037
 		 */
 
+		$filename = wp_unslash( $_FILES['import']['name'] );
+		$filename = sanitize_file_name( $filename );
+
 		if ( ! current_user_can( 'upload_files' ) ) {
 			echo wp_json_encode( array(
 				'success' => false,
 				'data'    => array(
 					'message'  => __( 'You do not have permission to upload files.' ),
-					'filename' => $_FILES['import']['name'],
+					'filename' => $filename,
 				),
 			) );
 
@@ -261,7 +264,7 @@ class WXR_Import_UI {
 				'success' => false,
 				'data'    => array(
 					'message'  => $file->get_error_message(),
-					'filename' => $_FILES['import']['name'],
+					'filename' => $filename,
 				),
 			) );
 
