@@ -397,8 +397,10 @@ class WXR_Import_UI {
 	 */
 	public function stream_import() {
 		// Turn off PHP output compression
-		@ini_set( 'output_buffering', 'off' );
-		@ini_set( 'zlib.output_compression', false );
+		$previous = error_reporting( error_reporting() ^ E_WARNING );
+		ini_set( 'output_buffering', 'off' );
+		ini_set( 'zlib.output_compression', false );
+		error_reporting( $previous );
 
 		if ( $GLOBALS['is_nginx'] ) {
 			// Setting this header instructs Nginx to disable fastcgi_buffering
