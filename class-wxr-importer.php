@@ -1067,7 +1067,7 @@ class WXR_Importer extends WP_Importer {
 		if ( $this->options['aggressive_url_search'] ) {
 			// remap resized image URLs, works by stripping the extension and remapping the URL stub.
 			/*if ( preg_match( '!^image/!', $info['type'] ) ) {
-				$parts = pathinfo( $url );
+				$parts = pathinfo( $remote_url );
 				$name = basename( $parts['basename'], ".{$parts['extension']}" ); // PATHINFO_FILENAME in PHP 5.2
 
 				$parts_new = pathinfo( $upload['url'] );
