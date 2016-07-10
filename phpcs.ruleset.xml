@@ -2,7 +2,10 @@
 <ruleset name="WP-API">
 	<description>Sniffs for the coding standards of the WP-API plugin</description>
 
-	<exclude-pattern>*/core/*</exclude-pattern>
+	<config name="installed_paths" value="vendor/wp-coding-standards/wpcs,vendor/fig-r/psr2r-sniffer" />
+
+	<exclude-pattern>vendor/*</exclude-pattern>
+	<exclude-pattern>node_modules/*</exclude-pattern>
 
 	<rule ref="WordPress-VIP">
 		<exclude name="WordPress.VIP.FileSystemWritesDisallow" />
@@ -10,7 +13,37 @@
 		<exclude name="WordPress.VIP.RestrictedVariables" />
 		<exclude name="WordPress.VIP.SuperGlobalInputUsage" />
 		<exclude name="WordPress.VIP.ValidatedSanitizedInput" />
-		<exclude name="WordPress.CSRF.NonceVerification" />
+		<exclude name="WordPress.VIP.DirectDatabaseQuery" />
 		<exclude name="WordPress.XSS.EscapeOutput" />
+
+		<!--
+		Temporarily disable nonce verification:
+		https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/issues/572
+		-->
+		<exclude name="WordPress.CSRF.NonceVerification" />
+
+		<!--
+		OK, real talk right now. Yoda conditions are ridiculous.
+
+		The fundamental problem that Yoda conditions attempts to solve is:
+		the equality operator is very close to the assignment operator.
+		It's easy to mess up and accidentally assign to the variable you're
+		trying to check.
+
+		Here's the thing though. Yoda conditions just don't read correctly
+		in the code flow. They require you to change the way you think
+		about the control flow.
+
+		Rather than forcing every conditional to be backwards, why not ban
+		assignment from conditionals? You never really *need* to assign in
+		a conditional.
+
+		So, here's where I stand: no to Yoda conditions. Yes to banning
+		assignment in conditionals.
+		-->
+		<exclude name="WordPress.PHP.YodaConditions" />
 	</rule>
+
+	<!-- Ban inline assignment in control structures. See note on Yoda condtions. -->
+	<rule ref="PSR2R.ControlStructures.NoInlineAssignment" />
 </ruleset>

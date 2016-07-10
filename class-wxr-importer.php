@@ -561,7 +561,7 @@ class WXR_Importer extends WP_Importer {
 	public function set_user_mapping( $mapping ) {
 		foreach ( $mapping as $map ) {
 			if ( empty( $map['old_slug'] ) || empty( $map['old_id'] ) || empty( $map['new_id'] ) ) {
-				$this->logger->warning(  __( 'Invalid author mapping', 'wordpress-importer') );
+				$this->logger->warning( __( 'Invalid author mapping', 'wordpress-importer' ) );
 				$this->logger->debug( var_export( $map, true ) );
 				continue;
 			}
@@ -760,13 +760,13 @@ class WXR_Importer extends WP_Importer {
 		$post_exists = $this->post_exists( $data );
 		if ( $post_exists ) {
 			$this->logger->info( sprintf(
-				__('%s "%s" already exists.', 'wordpress-importer'),
+				__( '%s "%s" already exists.', 'wordpress-importer' ),
 				$post_type_object->labels->singular_name,
 				$data['post_title']
 			) );
-			
+
 			// Even though this post already exists, new comments might need importing
-    			$this->process_comments( $comments, $original_id, $data, $post_exists );
+			$this->process_comments( $comments, $original_id, $data, $post_exists );
 
 			return false;
 		}
@@ -791,8 +791,7 @@ class WXR_Importer extends WP_Importer {
 			$data['post_author'] = $this->options['default_author'];
 		} elseif ( isset( $this->mapping['user_slug'][ $author ] ) ) {
 			$data['post_author'] = $this->mapping['user_slug'][ $author ];
-		}
-		else {
+		} else {
 			$meta[] = array( 'key' => '_wxr_import_user_slug', 'value' => $author );
 			$requires_remapping = true;
 
@@ -844,7 +843,7 @@ class WXR_Importer extends WP_Importer {
 				) );
 				return false;
 			}
-			$remote_url = ! empty($data['attachment_url']) ? $data['attachment_url'] : $data['guid'];
+			$remote_url = ! empty( $data['attachment_url'] ) ? $data['attachment_url'] : $data['guid'];
 			$post_id = $this->process_attachment( $postdata, $meta, $remote_url );
 		} else {
 			$post_id = wp_insert_post( $postdata, true );
@@ -873,7 +872,7 @@ class WXR_Importer extends WP_Importer {
 		}
 
 		// Ensure stickiness is handled correctly too
-		if ( $data['is_sticky'] == 1 ) {
+		if ( $data['is_sticky'] === '1' ) {
 			stick_post( $post_id );
 		}
 
@@ -906,8 +905,7 @@ class WXR_Importer extends WP_Importer {
 
 				if ( isset( $this->mapping['term'][ $key ] ) ) {
 					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
-				}
-				else {
+				} else {
 					$meta[] = array( 'key' => '_wxr_import_term', 'value' => $term );
 					$requires_remapping = true;
 				}
@@ -984,7 +982,7 @@ class WXR_Importer extends WP_Importer {
 			default:
 				// associated object is missing or not imported yet, we'll retry later
 				$this->missing_menu_items[] = $item;
-				$this->logger->debug('Unknown menu item type');
+				$this->logger->debug( 'Unknown menu item type' );
 				break;
 		}
 
@@ -1059,7 +1057,7 @@ class WXR_Importer extends WP_Importer {
 		$this->url_remap[ $remote_url ] = $upload['url'];
 
 		// If we have a HTTPS URL, ensure the HTTP URL gets replaced too
-		if ( substr( $remote_url, 0, 8 ) === 'https://') {
+		if ( substr( $remote_url, 0, 8 ) === 'https://' ) {
 			$insecure_url = 'http' . substr( $remote_url, 5 );
 			$this->url_remap[ $insecure_url ] = $upload['url'];
 		}
@@ -1139,7 +1137,7 @@ class WXR_Importer extends WP_Importer {
 			$key = apply_filters( 'import_post_meta_key', $meta_item['key'], $post_id, $post );
 			$value = false;
 
-			if ( '_edit_last' == $key ) {
+			if ( '_edit_last' === $key ) {
 				$value = intval( $meta_item['value'] );
 				if ( ! isset( $this->mapping['user'][ $value ] ) ) {
 					// Skip!
@@ -1151,15 +1149,17 @@ class WXR_Importer extends WP_Importer {
 
 			if ( $key ) {
 				// export gets meta straight from the DB so could have a serialized string
-				if ( ! $value )
+				if ( ! $value ) {
 					$value = maybe_unserialize( $meta_item['value'] );
+				}
 
 				add_post_meta( $post_id, $key, $value );
 				do_action( 'import_post_meta', $post_id, $key, $value );
 
 				// if the post has a featured image, take note of this in case of remap
-				if ( '_thumbnail_id' == $key )
-					$this->featured_images[$post_id] = (int) $value;
+				if ( '_thumbnail_id' === $key ) {
+					$this->featured_images[ $post_id ] = (int) $value;
+				}
 			}
 		}
 
@@ -1281,9 +1281,12 @@ class WXR_Importer extends WP_Importer {
 
 			// if this is a new post we can skip the comment_exists() check
 			// TODO: Check comment_exists for performance
-			if ( $post_exists && $exists = $this->comment_exists( $comment ) ) {
-				$this->mapping['comment'][ $original_id ] = $exists;
-				continue;
+			if ( $post_exists ) {
+				$existing = $this->comment_exists( $comment );
+				if ( $existing ) {
+					$this->mapping['comment'][ $original_id ] = $exists;
+					continue;
+				}
 			}
 
 			// Remove meta from the main array
@@ -1630,7 +1633,8 @@ class WXR_Importer extends WP_Importer {
 		$parent_id   = isset( $data['parent'] )  ? (int) $data['parent']  : 0;
 
 		$mapping_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
-		if ( $existing = $this->term_exists( $data ) ) {
+		$existing = $this->term_exists( $data );
+		if ( $existing ) {
 			$this->mapping['term'][ $mapping_key ] = $existing;
 			$this->mapping['term_id'][ $original_id ] = $existing;
 			return false;
@@ -1732,18 +1736,19 @@ class WXR_Importer extends WP_Importer {
 
 		// get placeholder file in the upload dir with a unique, sanitized filename
 		$upload = wp_upload_bits( $file_name, 0, '', $post['upload_date'] );
-		if ( $upload['error'] )
+		if ( $upload['error'] ) {
 			return new WP_Error( 'upload_dir_error', $upload['error'] );
+		}
 
 		// fetch the remote url and write it to the placeholder file
 		$response = wp_remote_get( $url, array(
 			'stream' => true,
-			'filename' => $upload['file']
+			'filename' => $upload['file'],
 		) );
 
 		// request failed
 		if ( is_wp_error( $response ) ) {
-			@unlink( $upload['file'] );
+			unlink( $upload['file'] );
 			return $response;
 		}
 
@@ -1751,11 +1756,11 @@ class WXR_Importer extends WP_Importer {
 
 		// make sure the fetch was successful
 		if ( $code !== 200 ) {
-			@unlink( $upload['file'] );
+			unlink( $upload['file'] );
 			return new WP_Error(
 				'import_file_error',
 				sprintf(
-					__('Remote server returned %1$d %2$s for %3$s', 'wordpress-importer'),
+					__( 'Remote server returned %1$d %2$s for %3$s', 'wordpress-importer' ),
 					$code,
 					get_status_header_desc( $code ),
 					$url
@@ -1766,20 +1771,21 @@ class WXR_Importer extends WP_Importer {
 		$filesize = filesize( $upload['file'] );
 		$headers = wp_remote_retrieve_headers( $response );
 
-		if ( isset( $headers['content-length'] ) && $filesize != $headers['content-length'] ) {
-			@unlink( $upload['file'] );
-			return new WP_Error( 'import_file_error', __('Remote file is incorrect size', 'wordpress-importer') );
+		if ( isset( $headers['content-length'] ) && $filesize !== (int) $headers['content-length'] ) {
+			unlink( $upload['file'] );
+			return new WP_Error( 'import_file_error', __( 'Remote file is incorrect size', 'wordpress-importer' ) );
 		}
 
-		if ( 0 == $filesize ) {
-			@unlink( $upload['file'] );
-			return new WP_Error( 'import_file_error', __('Zero size file downloaded', 'wordpress-importer') );
+		if ( 0 === $filesize ) {
+			unlink( $upload['file'] );
+			return new WP_Error( 'import_file_error', __( 'Zero size file downloaded', 'wordpress-importer' ) );
 		}
 
 		$max_size = (int) $this->max_attachment_size();
 		if ( ! empty( $max_size ) && $filesize > $max_size ) {
-			@unlink( $upload['file'] );
-			return new WP_Error( 'import_file_error', sprintf(__('Remote file is too large, limit is %s', 'wordpress-importer'), size_format($max_size) ) );
+			unlink( $upload['file'] );
+			$message = sprintf( __( 'Remote file is too large, limit is %s', 'wordpress-importer' ), size_format( $max_size ) );
+			return new WP_Error( 'import_file_error', $message );
 		}
 
 		return $upload;
@@ -1811,8 +1817,7 @@ class WXR_Importer extends WP_Importer {
 				// Have we imported the parent now?
 				if ( isset( $this->mapping['post'][ $parent_id ] ) ) {
 					$data['post_parent'] = $this->mapping['post'][ $parent_id ];
-				}
-				else {
+				} else {
 					$this->logger->warning( sprintf(
 						__( 'Could not find the post parent for "%s" (post #%d)', 'wordpress-importer' ),
 						get_the_title( $post_id ),
@@ -1831,8 +1836,7 @@ class WXR_Importer extends WP_Importer {
 				// Have we imported the user now?
 				if ( isset( $this->mapping['user_slug'][ $author_slug ] ) ) {
 					$data['post_author'] = $this->mapping['user_slug'][ $author_slug ];
-				}
-				else {
+				} else {
 					$this->logger->warning( sprintf(
 						__( 'Could not find the author for "%s" (post #%d)', 'wordpress-importer' ),
 						get_the_title( $post_id ),
@@ -1946,8 +1950,7 @@ class WXR_Importer extends WP_Importer {
 				// Have we imported the parent now?
 				if ( isset( $this->mapping['comment'][ $parent_id ] ) ) {
 					$data['comment_parent'] = $this->mapping['comment'][ $parent_id ];
-				}
-				else {
+				} else {
 					$this->logger->warning( sprintf(
 						__( 'Could not find the comment parent for comment #%d', 'wordpress-importer' ),
 						$comment_id
@@ -1965,8 +1968,7 @@ class WXR_Importer extends WP_Importer {
 				// Have we imported the user now?
 				if ( isset( $this->mapping['user'][ $author_id ] ) ) {
 					$data['user_id'] = $this->mapping['user'][ $author_id ];
-				}
-				else {
+				} else {
 					$this->logger->warning( sprintf(
 						__( 'Could not find the author for comment #%d', 'wordpress-importer' ),
 						$comment_id
@@ -2007,13 +2009,16 @@ class WXR_Importer extends WP_Importer {
 	protected function replace_attachment_urls_in_content() {
 		global $wpdb;
 		// make sure we do the longest urls first, in case one is a substring of another
-		uksort( $this->url_remap, array(&$this, 'cmpr_strlen') );
+		uksort( $this->url_remap, array( $this, 'cmpr_strlen' ) );
 
 		foreach ( $this->url_remap as $from_url => $to_url ) {
 			// remap urls in post_content
-			$wpdb->query( $wpdb->prepare("UPDATE {$wpdb->posts} SET post_content = REPLACE(post_content, %s, %s)", $from_url, $to_url) );
+			$query = $wpdb->prepare( "UPDATE {$wpdb->posts} SET post_content = REPLACE(post_content, %s, %s)", $from_url, $to_url );
+			$wpdb->query( $query );
+
 			// remap enclosure urls
-			$result = $wpdb->query( $wpdb->prepare("UPDATE {$wpdb->postmeta} SET meta_value = REPLACE(meta_value, %s, %s) WHERE meta_key='enclosure'", $from_url, $to_url) );
+			$query = $wpdb->prepare( "UPDATE {$wpdb->postmeta} SET meta_value = REPLACE(meta_value, %s, %s) WHERE meta_key='enclosure'", $from_url, $to_url );
+			$result = $wpdb->query( $query );
 		}
 	}
 
@@ -2023,11 +2028,13 @@ class WXR_Importer extends WP_Importer {
 	function remap_featured_images() {
 		// cycle through posts that have a featured image
 		foreach ( $this->featured_images as $post_id => $value ) {
-			if ( isset( $this->processed_posts[$value] ) ) {
-				$new_id = $this->processed_posts[$value];
+			if ( isset( $this->processed_posts[ $value ] ) ) {
+				$new_id = $this->processed_posts[ $value ];
+
 				// only update if there's a difference
-				if ( $new_id != $value )
+				if ( $new_id !== $value ) {
 					update_post_meta( $post_id, '_thumbnail_id', $new_id );
+				}
 			}
 		}
 	}
@@ -2041,8 +2048,10 @@ class WXR_Importer extends WP_Importer {
 	public function is_valid_meta_key( $key ) {
 		// skip attachment metadata since we'll regenerate it from scratch
 		// skip _edit_lock as not relevant for import
-		if ( in_array( $key, array( '_wp_attached_file', '_wp_attachment_metadata', '_edit_lock' ) ) )
+		if ( in_array( $key, array( '_wp_attached_file', '_wp_attachment_metadata', '_edit_lock' ) ) ) {
 			return false;
+		}
+
 		return $key;
 	}
 
@@ -2068,7 +2077,7 @@ class WXR_Importer extends WP_Importer {
 
 	// return the difference in length between two strings
 	function cmpr_strlen( $a, $b ) {
-		return strlen($b) - strlen($a);
+		return strlen( $b ) - strlen( $a );
 	}
 
 	/**
