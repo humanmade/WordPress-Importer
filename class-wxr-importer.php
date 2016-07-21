@@ -1632,11 +1632,7 @@ class WXR_Importer extends WP_Importer {
 
 			/* TRY 2016-07-21 */
 			if $child->tagName=='wp:termmeta'){
-/* parse a meta node into meta data.
-*
-* @param DOMElement $node Parent node of meta data (typically `wp:postmeta` or `wp:commentmeta`).
-* @return array|null Meta data array on success, or null on error.				
- */
+ 				$meta = array_merge($meta, parse_meta_node( $child ) );
 				continue;	
 			}
 			$key = array_search( $child->tagName, $tag_name );
@@ -1750,6 +1746,23 @@ class WXR_Importer extends WP_Importer {
 		) );
 
 		do_action( 'wp_import_insert_term', $term_id, $data );
+		
+		/* TRY 2016-08-20 */
+		/* insert termmeta, if any */
+		if(!empty($meta)){
+			foreach ($meta as $meta_key => $meta_value){
+				 $result = add_term_meta ($term_id, $meta_key, $meta_value) ;
+				 if ( is_wp_error( $result ) ) {
+					$this->logger->warning( sprintf(
+						__( 'Failed to add metakey: %s, metavalue: %s to term_id: %d', 'wordpress-importer' ),
+						 $meta_key, $meta_value,$term_id) );
+				 } else {
+					$this->logger->debug( sprintf(
+						__( 'Meta for term_id %d : %s => %s ; successfully added!', 'wordpress-importer' ),
+						$term_id, $meta_key, $meta_value) );
+				}
+			}
+		}
 
 		/**
 		 * Term processing completed.
