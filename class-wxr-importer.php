@@ -1556,15 +1556,12 @@ class WXR_Importer extends WP_Importer {
 		do_action( 'wxr_importer.processed.user', $user_id, $userdata );
 	}
 
-/**
-	 * Output termmeta XML tags for a given term object.
-	 *
-	 * @since 4.6.0
-	 *
-	 * @param WP_Term $term Term object.
+/** Output termmeta XML tags for a given term object.
+ * @since 4.6.0
+ * @param WP_Term $term Term object.
 **/
-/*
-	function wxr_term_meta( $term ) {
+
+/*	function wxr_term_meta( $term ) {
 		global $wpdb;
 
 		$termmeta = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->termmeta WHERE term_id = %d", $term->term_id ) );
@@ -1600,6 +1597,7 @@ class WXR_Importer extends WP_Importer {
 			'parent'      => 'wp:term_parent',
 			'name'        => 'wp:term_name',
 			'description' => 'wp:term_description',
+			'meta'        => 'wp:termmeta',
 		);
 		$taxonomy = null;
 
@@ -1611,6 +1609,7 @@ class WXR_Importer extends WP_Importer {
 				$tag_name['name']        = 'wp:cat_name';
 				$tag_name['description'] = 'wp:category_description';
 				$tag_name['taxonomy']    = null;
+				$tag_name['meta']        =  'wp:termmeta';
 
 				$data['taxonomy'] = 'category';
 				break;
@@ -1621,6 +1620,7 @@ class WXR_Importer extends WP_Importer {
 				$tag_name['name']        = 'wp:tag_name';
 				$tag_name['description'] = 'wp:tag_description';
 				$tag_name['taxonomy']    = null;
+				$tag_name['meta']        =  'wp:termmeta';
 
 				$data['taxonomy'] = 'post_tag';
 				break;
