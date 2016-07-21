@@ -1562,7 +1562,8 @@ class WXR_Importer extends WP_Importer {
 	 * @since 4.6.0
 	 *
 	 * @param WP_Term $term Term object.
-	 
+**/
+/*
 	function wxr_term_meta( $term ) {
 		global $wpdb;
 
@@ -1585,7 +1586,7 @@ class WXR_Importer extends WP_Importer {
 			}
 		}
 	}
-	*/
+*/
 
 
 	protected function parse_term_node( $node, $type = 'term' ) {
