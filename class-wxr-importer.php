@@ -1556,6 +1556,39 @@ class WXR_Importer extends WP_Importer {
 		do_action( 'wxr_importer.processed.user', $user_id, $userdata );
 	}
 
+/**
+	 * Output termmeta XML tags for a given term object.
+	 *
+	 * @since 4.6.0
+	 *
+	 * @param WP_Term $term Term object.
+	 
+	function wxr_term_meta( $term ) {
+		global $wpdb;
+
+		$termmeta = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->termmeta WHERE term_id = %d", $term->term_id ) );
+
+		foreach ( $termmeta as $meta ) {
+			/**
+			 * Filter whether to selectively skip term meta used for WXR exports.
+			 *
+			 * Returning a truthy value to the filter will skip the current meta
+			 * object from being exported.
+			 *
+			 * @since 4.6.0
+			 *
+			 * @param bool   $skip     Whether to skip the current piece of term meta. Default false.
+			 * @param string $meta_key Current meta key.
+			 * @param object $meta     Current meta object.
+			 */
+			if ( ! apply_filters( 'wxr_export_skip_termmeta', false, $meta->meta_key, $meta ) ) {
+				printf( "\t\t<wp:termmeta>\n\t\t\t<wp:meta_key>%s</wp:meta_key>\n\t\t\t<wp:meta_value>%s</wp:meta_value>\n\t\t</wp:termmeta>\n", wxr_cdata( $meta->meta_key ), wxr_cdata( $meta->meta_value ) );
+			}
+		}
+	}
+	*/
+
+
 	protected function parse_term_node( $node, $type = 'term' ) {
 		$data = array();
 		$meta = array();
