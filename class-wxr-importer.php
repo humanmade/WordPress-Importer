@@ -1609,7 +1609,6 @@ class WXR_Importer extends WP_Importer {
 				$tag_name['name']        = 'wp:cat_name';
 				$tag_name['description'] = 'wp:category_description';
 				$tag_name['taxonomy']    = null;
-				$tag_name['meta']        =  'wp:termmeta';
 
 				$data['taxonomy'] = 'category';
 				break;
@@ -1620,7 +1619,6 @@ class WXR_Importer extends WP_Importer {
 				$tag_name['name']        = 'wp:tag_name';
 				$tag_name['description'] = 'wp:tag_description';
 				$tag_name['taxonomy']    = null;
-				$tag_name['meta']        =  'wp:termmeta';
 
 				$data['taxonomy'] = 'post_tag';
 				break;
@@ -1632,6 +1630,15 @@ class WXR_Importer extends WP_Importer {
 				continue;
 			}
 
+			/* TRY 2016-07-21 */
+			if $child->tagName=='wp:termmeta'){
+/* parse a meta node into meta data.
+*
+* @param DOMElement $node Parent node of meta data (typically `wp:postmeta` or `wp:commentmeta`).
+* @return array|null Meta data array on success, or null on error.				
+ */
+				continue;	
+			}
 			$key = array_search( $child->tagName, $tag_name );
 			if ( $key ) {
 				$data[ $key ] = $child->textContent;
@@ -1704,9 +1711,6 @@ class WXR_Importer extends WP_Importer {
 			if ( ! isset( $allowed[ $key ] ) ) {
 				continue;
 			}
-
-			$termdata[ $key ] = $data[ $key ];
-		}
 
 		$result = wp_insert_term( $data['name'], $data['taxonomy'], $termdata );
 		if ( is_wp_error( $result ) ) {
