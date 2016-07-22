@@ -1304,6 +1304,7 @@ class WXR_Importer extends WP_Importer {
 			'meta'        => 'wp:termmeta',
 		);
 		$taxonomy = null;
+		$data['meta'] = array();
 		// Special casing!
 		switch ( $type ) {
 			case 'category':
@@ -1333,12 +1334,8 @@ class WXR_Importer extends WP_Importer {
 // Debug::log("In class-wxr-importer, function parse_term_node, about to parse termmeta node: " . print_r($child ,true));
 				$result = $this->parse_meta_node( $child );
 // Debug::log("In class-wxr-importer, function parse_term_node, parsed termmeta result: " . print_r($result ,true));			
- 				if(!empty($result)){
-					$newkey = $result['key'];
-// Debug::log("In class-wxr-importer, function parse_term_node, newkey: ". print_r($newkey,true));
-					$newvalue = $result['value'];
-// Debug::log("In class-wxr-importer, function parse_term_node, newvalue: ". print_r($newvalue,true));
-					$meta[$newkey] = $newvalue;
+ 				if(!empty($result) && isset($result['key']) && isset($result['value'])){
+					$data['meta'][$result['key']] = $result['value'];
 				}
 // Debug::log("In class-wxr-importer, function parse_term_node, merged local meta array: " . print_r($meta,true));
 				continue;	
@@ -1395,9 +1392,9 @@ class WXR_Importer extends WP_Importer {
 			'description' => true,
 		);
 
-		// Map the parent comment, or mark it as one we need to fix
+		// Map the parent term, or mark it as one we need to fix
 		// TODO: add parent mapping and remapping
-		/*$requires_remapping = false;
+		$requires_remapping = false;
 		if ( $parent_id ) {
 			if ( isset( $this->mapping['term'][ $parent_id ] ) ) {
 				$data['parent'] = $this->mapping['term'][ $parent_id ];
@@ -1409,7 +1406,7 @@ class WXR_Importer extends WP_Importer {
 				// Wipe the parent for now
 				$data['parent'] = 0;
 			}
-		}*/
+		}
 
 		foreach ( $data as $key => $value ) {
 			if ( ! isset( $allowed[ $key ] ) ) {
@@ -1450,8 +1447,8 @@ class WXR_Importer extends WP_Importer {
 				/* TRY 2016-08-20 */
 		/* insert termmeta, if any */
 // Debug::log("In class-wxr-importer, function process_term, successfully added term_id: " . $term_id . "with associated meta: " . print_r($meta,true));
-		if(!empty($meta)){
-			foreach ($meta as $meta_key => $meta_value){
+		if(isset($data['meta'])){
+			foreach ($data['meta'] as $meta_key => $meta_value){
 // Debug::log("In class-wxr-importer, function process_term, about to insert meta_key: " . print_r($meta_key,true));
 				 $result = add_term_meta ($term_id, $meta_key, $meta_value) ;
 				 if ( is_wp_error( $result ) ) {
