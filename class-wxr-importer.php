@@ -2090,7 +2090,7 @@ class WXR_Importer extends WP_Importer {
 			$data = array();
 
 			$parent_id = get_comment_meta( $comment_id, '_wxr_import_parent', true );
-			if ( ! empty( $parent ) ) {
+			if ( ! empty( $parent_id ) ) {
 				// Have we imported the parent now?
 				if ( isset( $this->mapping['comment'][ $parent_id ] ) ) {
 					$data['comment_parent'] = $this->mapping['comment'][ $parent_id ];
