@@ -1297,7 +1297,7 @@ class WXR_Importer extends WP_Importer {
 			'id'          => 'wp:term_id',
 			'taxonomy'    => 'wp:term_taxonomy',
 			'slug'        => 'wp:term_slug',
-			'parent'      => 'wp:term_parent',
+			'parent_slug'      => 'wp:term_parent',
 			'name'        => 'wp:term_name',
 			'description' => 'wp:term_description',
 		);
@@ -1306,7 +1306,7 @@ class WXR_Importer extends WP_Importer {
 		switch ( $type ) {
 			case 'category':
 				$tag_name['slug']        = 'wp:category_nicename';
-				$tag_name['parent']      = 'wp:category_parent';
+				$tag_name['parent_slug']      = 'wp:category_parent';
 				$tag_name['name']        = 'wp:cat_name';
 				$tag_name['description'] = 'wp:category_description';
 				$tag_name['taxonomy']    = null;
@@ -1314,7 +1314,7 @@ class WXR_Importer extends WP_Importer {
 				break;
 			case 'tag':
 				$tag_name['slug']        = 'wp:tag_slug';
-				$tag_name['parent']      = null;
+				$tag_name['parent_slug']      = null;
 				$tag_name['name']        = 'wp:tag_name';
 				$tag_name['description'] = 'wp:tag_description';
 				$tag_name['taxonomy']    = null;
@@ -1324,19 +1324,27 @@ class WXR_Importer extends WP_Importer {
 		foreach ( $node->childNodes as $child ) {
 			// We only care about child elements
 			if ( $child->nodeType !== XML_ELEMENT_NODE ) {
+if ( $child->nodeType === XML_TEXT_NODE ){ //Debug::log("In class-wxr-importer, function parse_term_node, skipping over text node.");
+continue;
+}
+if ( $child->nodeType === XML_CDATA_SECTION_NODE ){ Debug::log("In class-wxr-importer, function parse_term_node, skipping over CDATA node.");
+continue;
+}
+Debug::log("In class-wxr-importer, function parse_term_node, skipping over node: " . print_r($child,true));
 				continue;
 			}
 			/* TRY 2016-07-21 */
 			if ($child->tagName=='wp:termmeta'){
-// Debug::log("In class-wxr-importer, function parse_term_node, about to parse termmeta node: " . print_r($child ,true));
+//Debug::log("In class-wxr-importer, function parse_term_node, about to parse termmeta node: " . print_r($child ,true));
 				$result = $this->parse_meta_node( $child );
 // Debug::log("In class-wxr-importer, function parse_term_node, parsed termmeta result: " . print_r($result ,true));			
  				if(!empty($result) && isset($result['key']) && isset($result['value'])){
 					$meta[$result['key']] = $result['value'];
 				}
 // Debug::log("In class-wxr-importer, function parse_term_node, merged local meta array: " . print_r($meta,true));
-				continue;	
 			}
+// Debug::log("In class-wxr-importer, function parse_term_node, " . );
+
 			$key = array_search( $child->tagName, $tag_name );
 			if ( $key ) {
 				$data[ $key ] = $child->textContent;
@@ -1367,19 +1375,20 @@ class WXR_Importer extends WP_Importer {
 		}
 		$original_id = isset( $data['id'] )      ? (int) $data['id']      : 0;
 		$term_slug = isset( $data['slug'] )  ? $data['slug']  : '';
-		$parent_slug   = isset( $data['parent'] )  ? $data['parent']  : '';
+		$parent   = isset( $data['parent'] )  ? $data['parent']  : '';
+		$parent_slug   = isset( $data['parent_slug'] )  ? $data['parent_slug']  : '';
 		$mapping_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
 		$existing = $this->term_exists( $data );
 		if ( $existing ) {
 			$this->mapping['term'][ $mapping_key ] = $existing;
 			$this->mapping['term_id'][ $original_id ] = $existing;
 			$this->mapping['term_slug'][ $term_slug ] = $existing;
-// Debug::log("In class-wxr-importer, starting function process_term, term already exists!");
+Debug::log("In class-wxr-importer, in function process_term, term already exists with 'returned existing': " . print_r($existing,true));
 			return false;
 		}
 		// WP really likes to repeat itself in export files
 		if ( isset( $this->mapping['term'][ $mapping_key ] ) ) {
-// Debug::log("In class-wxr-importer, starting function process_term, really, term already exists!");
+// Debug::log("In class-wxr-importer, in function process_term, really, term already exists!");
 			return false;
 		}
 		$termdata = array();
@@ -1397,18 +1406,21 @@ class WXR_Importer extends WP_Importer {
 			} else {
 				// Prepare for remapping later
 				$meta['_wxr_import_parent'] = $parent_slug;
-// Debug::log("In class-wxr-importer, function process_term, the parent slug for this term has not yet been mapped, meta: " . print_r($meta,true));
+Debug::log("In class-wxr-importer, function process_term, the parent slug: " . $parent_slug . " for original_term_id: " . $original_id . " has not yet been mapped." );
 				$requires_remapping = true;
-				// Wipe the parent for now
+				// Wipe the parent id for now
 				$data['parent'] = 0;
+
 			}
 		}
+else{/* DEBUG */	$parent_slug = '';}
 		foreach ( $data as $key => $value ) {
 			if ( ! isset( $allowed[ $key ] ) ) {
 				continue;
 			}
 			$termdata[ $key ] = $data[ $key ];
 		}
+// Debug::log("In class-wxr-importer, function process_term,about to insert new term: " . $data['name'] .", with  allowed termattributes " . print_r($termdata,true));
 		$result = wp_insert_term( $data['name'], $data['taxonomy'], $termdata );
 		if ( is_wp_error( $result ) ) {
 // Debug::log("In class-wxr-importer, function process_term, failed to insert a new term with error: " . print_r($result,true));
@@ -1430,11 +1442,17 @@ class WXR_Importer extends WP_Importer {
 			return false;
 		}
 		$term_id = $result['term_id'];
+		// now prepare to map this new term
 		$this->mapping['term'][ $mapping_key ] = $term_id;
 		$this->mapping['term_id'][ $original_id ] = $term_id;
 		$this->mapping['term_slug'][ $term_slug ] = $term_id;
+
+// Debug::log($term_id . " successfully inserted (original_id: " . $original_id . ", with parent_slug: " . $parent_slug. " )");
+
 		if ( $requires_remapping ) {
-				$this->requires_remapping['term'][ $term_id ] = true;
+				$this->requires_remapping['term'][ $term_id ] = $data['taxonomy']; //TRY: 2016-07-22: need to record the taxonomy
+Debug::log("In class-wxr-importer, function process_term, term: " . $term_id . " requires remapping!");
+Debug::log("Term slug: " . $term_slug . " mapped to new term_id: " . $term_id);
 		}
 		
 /* TRY 2016-08-20 */
@@ -1542,6 +1560,7 @@ class WXR_Importer extends WP_Importer {
 			$this->post_process_comments( $this->requires_remapping['comment'] );
 		}
 		if ( ! empty( $this->requires_remapping['term'] ) ) {
+Debug::log("In function post_process about to post_process_terms with argument: " . print_r($this->requires_remapping['term'],true));
 			$this->post_process_terms( $this->requires_remapping['term'] );
 		}
 	}
@@ -1669,31 +1688,118 @@ class WXR_Importer extends WP_Importer {
 		delete_post_meta( $post_id, '_wxr_import_menu_item' );
 	}
 	
-protected function post_process_terms( $todo ) {
-// Debug::log("In class-wxr-importer, function post_process_terms, with argument: " . print_r($todo,true));
-	foreach ( $todo as $term_id => $_ ) {
-		$data = array();
-		$parent_slug = get_term_meta( $term_id, '_wxr_import_parent', true );
-		if ( ! empty( $parent_slug ) ) {
-			// Have we imported the parent now?
-//Debug::log("In class-wxr-importer, function post_process_terms, parent_slug: " . print_r($parent_slug,true));
-			if ( isset( $this->mapping['term_slug'][ $parent_slug ] ) ) {
-//////// actually update the terms parent...				$data['term_parent'] = $this->mapping['term_slug'][ $parent_slug ];
-			} else {
+	protected function post_process_terms ( $terms_to_be_remapped ) {
+
+	// not Wordpress, but 'top' or 'root' is standard term in mathematics (avoids confusion with 0, null)
+	$this->mapping['term_slug'][ 'top' ] = 0;
+
+		foreach ( $terms_to_be_remapped as $termid => $term_taxonomy ) {
+			// basic check
+			if( empty($termid) or !( is_numeric($termid) ) ){
+Debug::log("Faulty term_id provided in terms-to-be-remapped array: " . $termid);			
+						$this->logger->warning( sprintf(
+								__( 'Faulty term_id provided in terms-to-be-remapped array %s', 'wordpress-importer' ),
+								$termid
+							) );
+							continue;
+			}
+			$term_id = (int) $termid;
+				
+			if( empty($term_taxonomy) ){
+Debug::log("No taxonomy provided in terms-to-be-remapped array for term: " . $term_id);			
+						$this->logger->warning( sprintf(
+								__( 'No taxonomy provided in terms-to-be-remapped array for term #%d', 'wordpress-importer' ),
+								$term_id
+							) );
+							continue;
+			}
+					
+			$data = array();
+			$parent_slug = get_term_meta( $term_id, '_wxr_import_parent', true );
+			
+			if ( empty( $parent_slug ) ) {
+Debug::log("No parent_slug identified in remapping-array for term: " . $term_id );
+						$this->logger->warning( sprintf(
+								__( 'No parent_slug identified in remapping-array for term: %d', 'wordpress-importer' ),
+								$term_id
+							) );
+							continue;
+			}
+			
+			if ( !isset( $this->mapping['term_slug'][ $parent_slug ] ) or !is_numeric($this->mapping['term_slug'][ $parent_slug ]) ) {
+Debug::log("The term(" . $term_id  . ")'s parent_slug (" . $parent_slug . ") is not found in the remapping-array.");
+						$this->logger->warning( sprintf(
+								__( 'The term(%d)"s parent_slug (%s) is not found in the remapping-array.', 'wordpress-importer' ),
+								$term_id,
+								$parent_slug
+							) );
+							continue;
+			}
+			
+			$mapped_parent_id = (int) $this->mapping['term_slug'][ $parent_slug ];
+			
+Debug::log("In class-wxr-importer, function post_process_terms, parent slug: ". $parent_slug .", of term: " . $term_id.", has been mapped to term_id: " . $mapped_parent_id);
+
+			$termattributes = get_term_by( 'id', $term_id, $term_taxonomy, ARRAY_A); 
+			// note: reserved-word clash with OBJECT return [$termattributes->parent], so return an associative array
+			
+			if ( empty( $termattributes ) ){
+Debug::log("No data returned by get_term_by for term_id: " . $term_id);			
 				$this->logger->warning( sprintf(
-					__( 'Could not find the term parent for term #%d', 'wordpress-importer' ),
+						__( 'No data returned by get_term_by for term_id #%d', 'wordpress-importer' ),
+						$term_id
+					) );
+					continue;
+			}
+else{ Debug::log("Get_term_by for term_id: " . $term_id . " returns: " . print_r($termattributes,true)); }				
+			
+if ( ! isset( $termattributes['parent'] ) ) {
+Debug::log("Parent ID of term: " . $term_id.", has not been set");					
+} else {
+Debug::log("Parent ID of term: " . $term_id.", is: ". print_r($termattributes['parent'],true));
+}
+			// check if the correct parent id is already correctly mapped
+			// note it is OK if $termattributes['parent'] is not set, as we will set it later in this function 
+			if ( isset( $termattributes['parent'] ) &&  $termattributes['parent'] == $mapped_parent_id ) {
+				
+Debug::log("In function post_process_terms,	processing term: " . $term_id . ", parent_slug: " . $parent_slug . ", has already been successfully mapped to parent_id: " . $mapped_parent_id . ".");
+				// Clear out our temporary meta key
+				delete_term_meta( $term_id, '_wxr_import_parent' );
+				continue;
+			}
+			
+	//The fields returned from get_term_by are: term_id, name, slug, term_group, term_taxonomy_id, taxonomy, description, parent, count
+	// Allowed $args [AS ARRAY] passed to wp_update_term:  term_id, name, slug, term_group, term_taxonomy_id, taxonomy, description, parent, count
+			
+			// set the corretly mapped parent_id
+			$termattributes['parent'] = $mapped_parent_id;
+Debug::log("about to update term: " . $term_id. " with the attributes: " . print_r($termattributes,true) );
+			
+			$result = wp_update_term( $term_id, $termattributes['taxonomy'], $termattributes );
+			
+			if ( is_wp_error( $result ) ) {
+Debug::log("Failed to update term: " . $term_id . ", because of error: " . $result->get_error_message());
+			$this->logger->warning( sprintf(
+					__( 'Could not update "%s" (term #%d) with mapped data', 'wordpress-importer' ),
+					$termattributes['name'],
 					$term_id
 				) );
-				$this->logger->debug( sprintf(
-					__( 'Term %d was imported with parent %d, but could not be found', 'wordpress-importer' ),
-					$term_id,
-					$parent_slug
-				) );
+				$this->logger->debug( $result->get_error_message() );
+				continue;
 			}
+
+			// Clear out our temporary meta key
+			delete_term_meta( $term_id, '_wxr_import_parent' );
+
+Debug::log("In class-wxr-importer, function post_process_terms, successfully updated term: " . print_r($result,true) . ", with new data: ".print_r($termattributes,true));
+			$this->logger->debug( sprintf(
+				__( 'Term %d was successfully updated with parent %d', 'wordpress-importer' ),
+				$term_id,
+				$mapped_parent_id
+			) );				
 		}
 	}
-	delete_term_meta( $term_id, '_wxr_import_parent' );
-}
+
 	protected function post_process_comments( $todo ) {
 		foreach ( $todo as $comment_id => $_ ) {
 			$data = array();
