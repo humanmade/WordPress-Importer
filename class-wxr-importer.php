@@ -737,7 +737,7 @@ class WXR_Importer extends WP_Importer {
 		}
 
 		$original_id = isset( $data['post_id'] )     ? (int) $data['post_id']     : 0;
-		$parent   = isset( $data['post_parent'] ) ? (int) $data['post_parent'] : 0;
+		$parent_id   = isset( $data['post_parent'] ) ? (int) $data['post_parent'] : 0;
 		$author_id   = isset( $data['post_author'] ) ? (int) $data['post_author'] : 0;
 
 		// Have we already processed this?
@@ -773,11 +773,11 @@ class WXR_Importer extends WP_Importer {
 
 		// Map the parent post, or mark it as one we need to fix
 		$requires_remapping = false;
-		if ( $parent ) {
-			if ( isset( $this->mapping['post'][ $parent ] ) ) {
-				$data['post_parent'] = $this->mapping['post'][ $parent ];
+		if ( $parent_id ) {
+			if ( isset( $this->mapping['post'][ $parent_id ] ) ) {
+				$data['post_parent'] = $this->mapping['post'][ $parent_id ];
 			} else {
-				$meta[] = array( 'key' => '_wxr_import_parent', 'value' => $parent );
+				$meta[] = array( 'key' => '_wxr_import_parent', 'value' => $parent_id );
 				$requires_remapping = true;
 
 				$data['post_parent'] = 0;
@@ -1276,7 +1276,7 @@ class WXR_Importer extends WP_Importer {
 			}
 
 			$original_id = isset( $comment['comment_id'] )      ? (int) $comment['comment_id']      : 0;
-			$parent   = isset( $comment['comment_parent'] )  ? (int) $comment['comment_parent']  : 0;
+			$parent_id   = isset( $comment['comment_parent'] )  ? (int) $comment['comment_parent']  : 0;
 			$author_id   = isset( $comment['comment_user_id'] ) ? (int) $comment['comment_user_id'] : 0;
 
 			// if this is a new post we can skip the comment_exists() check
@@ -1295,12 +1295,12 @@ class WXR_Importer extends WP_Importer {
 
 			// Map the parent comment, or mark it as one we need to fix
 			$requires_remapping = false;
-			if ( $parent ) {
-				if ( isset( $this->mapping['comment'][ $parent ] ) ) {
-					$comment['comment_parent'] = $this->mapping['comment'][ $parent ];
+			if ( $parent_id ) {
+				if ( isset( $this->mapping['comment'][ $parent_id ] ) ) {
+					$comment['comment_parent'] = $this->mapping['comment'][ $parent_id ];
 				} else {
 					// Prepare for remapping later
-					$meta[] = array( 'key' => '_wxr_import_parent', 'value' => $parent );
+					$meta[] = array( 'key' => '_wxr_import_parent', 'value' => $parent_id );
 					$requires_remapping = true;
 
 					// Wipe the parent for now
@@ -1604,7 +1604,7 @@ class WXR_Importer extends WP_Importer {
 			if ($child->tagName==$tag_name['meta']){
 				$result = $this->parse_meta_node( $child );
  				if(!empty($result) && isset($result['key']) && isset($result['value'])){
-					$meta[$result['key']] = $result['value'];
+					$meta[] = array( 'key' => $result['key'], 'value' => $result['value']);
 				}
 			}
 			$key = array_search( $child->tagName, $tag_name );
@@ -1645,7 +1645,6 @@ class WXR_Importer extends WP_Importer {
 		 * wp_insert_term and wp_update_term use the key: 'parent' and an integer value 'id'
 		 * use both keys: 'parent' and 'parent_slug'
 		 */
-		$parent   = isset( $data['parent'] )  ? (int) $data['parent']  : 0;
 		$parent_slug   = isset( $data['parent_slug'] )  ? $data['parent_slug']  : '';
 		
 		$mapping_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
@@ -1666,8 +1665,7 @@ class WXR_Importer extends WP_Importer {
 		$allowed = array(
 			'slug' => true,
 			'description' => true,
-			'parent' => true,
-			'parent_slug' => true,
+			'parent' => true, /* the parent_id may have already been set, so pass this back to the newly inserted term */
 		);
 
 		// Map the parent comment, or mark it as one we need to fix
@@ -1677,8 +1675,7 @@ class WXR_Importer extends WP_Importer {
 				$data['parent'] = $this->mapping['term_slug'][ $parent_slug ];
 			} else {
 				// Prepare for remapping later
-				$meta['_wxr_import_parent'] = $parent_slug;
-				//$meta[] = array( 'key' => '_wxr_import_parent', 'value' => $parent_slug );
+				$meta[] = array( 'key' => '_wxr_import_parent', 'value' => $parent_slug );
 				$requires_remapping = true;
 
 				// Wipe the parent id for now
@@ -1734,12 +1731,12 @@ class WXR_Importer extends WP_Importer {
 		
 		/* insert termmeta, if any, including the flag to remap the parent '_wxr_import_parent' */
 		if(!empty($meta)){
-			foreach ($meta as $meta_key => $meta_value){
-				 $result = add_term_meta ($term_id, $meta_key, $meta_value) ;
+			foreach ( $meta as $meta_item){
+				 $result = add_term_meta ($term_id, $meta_item['key'], $meta_item['value']) ;
 				 if ( is_wp_error( $result ) ) {
 					$this->logger->warning( sprintf(
 						__( 'Failed to add metakey: %s, metavalue: %s to term_id: %d', 'wordpress-importer' ),
-						 $meta_key, $meta_value,$term_id) );
+						 $meta_item['key'], $meta_item['value'], $term_id) );
 						 do_action( 'wxr_importer.process_failed.termmeta', $result, $data, $meta );
 				 } else {
 					$this->logger->debug( sprintf(
