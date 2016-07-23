@@ -1757,7 +1757,6 @@ Debug::log("In class-wxr-importer, function parse_term_node, skipping over node:
 			$result = wp_update_term( $term_id, $termattributes['taxonomy'], $termattributes );
 			
 			if ( is_wp_error( $result ) ) {
-Debug::log("Failed to update term: " . $term_id . ", because of error: " . $result->get_error_message());
 			$this->logger->warning( sprintf(
 					__( 'Could not update "%s" (term #%d) with mapped data', 'wordpress-importer' ),
 					$termattributes['name'],
@@ -1770,7 +1769,6 @@ Debug::log("Failed to update term: " . $term_id . ", because of error: " . $resu
 			// Clear out our temporary meta key
 			delete_term_meta( $term_id, '_wxr_import_parent' );
 
-Debug::log("In class-wxr-importer, function post_process_terms, successfully updated term: " . print_r($result,true) . ", with new data: ".print_r($termattributes,true));
 			$this->logger->debug( sprintf(
 				__( 'Term %d was successfully updated with parent %d', 'wordpress-importer' ),
 				$term_id,
