@@ -1860,11 +1860,11 @@ class WXR_Importer extends WP_Importer {
 
 			$data = array();
 
-			$parent = get_post_meta( $post_id, '_wxr_import_parent', true );
-			if ( ! empty( $parent ) ) {
+			$parent_id = get_post_meta( $post_id, '_wxr_import_parent', true );
+			if ( ! empty( $parent_id ) ) {
 				// Have we imported the parent now?
-				if ( isset( $this->mapping['post'][ $parent ] ) ) {
-					$data['post_parent'] = $this->mapping['post'][ $parent ];
+				if ( isset( $this->mapping['post'][ $parent_id ] ) ) {
+					$data['post_parent'] = $this->mapping['post'][ $parent_id ];
 				} else {
 					$this->logger->warning( sprintf(
 						__( 'Could not find the post parent for "%s" (post #%d)', 'wordpress-importer' ),
@@ -1874,7 +1874,7 @@ class WXR_Importer extends WP_Importer {
 					$this->logger->debug( sprintf(
 						__( 'Post %d was imported with parent %d, but could not be found', 'wordpress-importer' ),
 						$post_id,
-						$parent
+						$parent_id
 					) );
 				}
 			}
@@ -2089,11 +2089,11 @@ class WXR_Importer extends WP_Importer {
 		foreach ( $todo as $comment_id => $_ ) {
 			$data = array();
 
-			$parent = get_comment_meta( $comment_id, '_wxr_import_parent', true );
+			$parent_id = get_comment_meta( $comment_id, '_wxr_import_parent', true );
 			if ( ! empty( $parent ) ) {
 				// Have we imported the parent now?
-				if ( isset( $this->mapping['comment'][ $parent ] ) ) {
-					$data['comment_parent'] = $this->mapping['comment'][ $parent ];
+				if ( isset( $this->mapping['comment'][ $parent_id ] ) ) {
+					$data['comment_parent'] = $this->mapping['comment'][ $parent_id ];
 				} else {
 					$this->logger->warning( sprintf(
 						__( 'Could not find the comment parent for comment #%d', 'wordpress-importer' ),
@@ -2102,7 +2102,7 @@ class WXR_Importer extends WP_Importer {
 					$this->logger->debug( sprintf(
 						__( 'Comment %d was imported with parent %d, but could not be found', 'wordpress-importer' ),
 						$comment_id,
-						$parent
+						$parent_id
 					) );
 				}
 			}
