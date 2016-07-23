@@ -1324,26 +1324,15 @@ class WXR_Importer extends WP_Importer {
 		foreach ( $node->childNodes as $child ) {
 			// We only care about child elements
 			if ( $child->nodeType !== XML_ELEMENT_NODE ) {
-if ( $child->nodeType === XML_TEXT_NODE ){ //Debug::log("In class-wxr-importer, function parse_term_node, skipping over text node.");
-continue;
-}
-if ( $child->nodeType === XML_CDATA_SECTION_NODE ){ Debug::log("In class-wxr-importer, function parse_term_node, skipping over CDATA node.");
-continue;
-}
-Debug::log("In class-wxr-importer, function parse_term_node, skipping over node: " . print_r($child,true));
 				continue;
 			}
-			/* TRY 2016-07-21 */
+
 			if ($child->tagName=='wp:termmeta'){
-//Debug::log("In class-wxr-importer, function parse_term_node, about to parse termmeta node: " . print_r($child ,true));
 				$result = $this->parse_meta_node( $child );
-// Debug::log("In class-wxr-importer, function parse_term_node, parsed termmeta result: " . print_r($result ,true));			
  				if(!empty($result) && isset($result['key']) && isset($result['value'])){
 					$meta[$result['key']] = $result['value'];
 				}
-// Debug::log("In class-wxr-importer, function parse_term_node, merged local meta array: " . print_r($meta,true));
 			}
-// Debug::log("In class-wxr-importer, function parse_term_node, " . );
 
 			$key = array_search( $child->tagName, $tag_name );
 			if ( $key ) {
