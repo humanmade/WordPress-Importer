@@ -765,6 +765,13 @@ class WXR_Importer extends WP_Importer {
 				$data['post_title']
 			) );
 
+			/**
+			 * Post processing already imported.
+			 *
+			 * @param array $data Raw data imported for the post.
+			 */
+			do_action( 'wxr_importer.process_already_imported.post', $data );
+
 			// Even though this post already exists, new comments might need importing
 			$this->process_comments( $comments, $original_id, $data, $post_exists );
 
@@ -1291,6 +1298,14 @@ class WXR_Importer extends WP_Importer {
 			if ( $post_exists ) {
 				$existing = $this->comment_exists( $comment );
 				if ( $existing ) {
+
+					/**
+					 * Comment processing already imported.
+					 *
+					 * @param array $comment Raw data imported for the comment.
+					 */
+					do_action( 'wxr_importer.process_already_imported.comment', $comment );
+
 					$this->mapping['comment'][ $original_id ] = $exists;
 					continue;
 				}
@@ -1642,6 +1657,14 @@ class WXR_Importer extends WP_Importer {
 		$mapping_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
 		$existing = $this->term_exists( $data );
 		if ( $existing ) {
+
+			/**
+			 * Term processing already imported.
+			 *
+			 * @param array $data Raw data imported for the term.
+			 */
+			do_action( 'wxr_importer.process_already_imported.term', $data );
+
 			$this->mapping['term'][ $mapping_key ] = $existing;
 			$this->mapping['term_id'][ $original_id ] = $existing;
 			return false;
