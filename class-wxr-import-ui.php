@@ -457,6 +457,7 @@ class WXR_Import_UI {
 		// Keep track of our progress
 		add_action( 'wxr_importer.processed.post', array( $this, 'imported_post' ), 10, 2 );
 		add_action( 'wxr_importer.process_failed.post', array( $this, 'imported_post' ), 10, 2 );
+		add_action( 'wxr_importer.process_skipped.post', array( $this, 'already_imported_post' ), 10, 2 );
 		add_action( 'wxr_importer.processed.comment', array( $this, 'imported_comment' ) );
 		add_action( 'wxr_importer.processed.term', array( $this, 'imported_term' ) );
 		add_action( 'wxr_importer.process_failed.term', array( $this, 'imported_term' ) );
@@ -681,6 +682,19 @@ class WXR_Import_UI {
 	 * @param array $data Post data saved to the DB.
 	 */
 	public function imported_post( $id, $data ) {
+		$this->emit_sse_message( array(
+			'action' => 'updateDelta',
+			'type'   => ( $data['post_type'] === 'attachment' ) ? 'media' : 'posts',
+			'delta'  => 1,
+		));
+	}
+
+	/**
+	 * Send message when a post is marked as already imported.
+	 *
+	 * @param array $data Post data saved to the DB.
+	 */
+	public function already_imported_post( $data ) {
 		$this->emit_sse_message( array(
 			'action' => 'updateDelta',
 			'type'   => ( $data['post_type'] === 'attachment' ) ? 'media' : 'posts',

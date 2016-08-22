@@ -841,6 +841,13 @@ class WXR_Importer extends WP_Importer {
 					__( 'Skipping attachment "%s", fetching attachments disabled' ),
 					$data['post_title']
 				) );
+				/**
+				 * Post processing skipped.
+				 *
+				 * @param array $data Raw data imported for the post.
+				 * @param array $meta Raw meta data, already processed by {@see process_post_meta}.
+				 */
+				do_action( 'wxr_importer.process_skipped.post', $data, $meta );
 				return false;
 			}
 			$remote_url = ! empty( $data['attachment_url'] ) ? $data['attachment_url'] : $data['guid'];
