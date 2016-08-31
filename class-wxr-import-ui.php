@@ -164,10 +164,6 @@ class WXR_Import_UI {
 					'max_file_size' => $max_upload_size . 'b',
 					'mime_types'    => array(
 						array(
-							'title' => esc_html__( 'Zip files', 'wordpress-importer' ),
-							'extensions' => 'zip'
-						),
-						array(
 							'title' => esc_html__( 'XML files', 'wordpress-importer' ),
 							'extensions' => 'xml'
 						)
