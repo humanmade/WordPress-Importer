@@ -8,3 +8,8 @@
 	width: 200px;
 	margin: 0 auto;
 }
+
+/* TODO: keep an eye out for a better way to remove the upload tab */
+#import-select .media-router a:not(.active) {
+	display: none;
+}

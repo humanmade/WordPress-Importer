@@ -154,10 +154,24 @@ class WXR_Import_UI {
 		// Set uploader settings
 		wp_plupload_default_settings();
 		$settings = array(
+			'l10n' => array(
+				'frameTitle' => esc_html__( 'Select', 'wordpress-importer' ),
+				'buttonText' => esc_html__( 'Import', 'wordpress-importer' ),
+			),
 			'next_url' => wp_nonce_url( $this->get_url( 1 ), 'import-upload' ) . '&id={id}',
 			'plupload' => array(
-				'filter' => array(
+				'filters' => array(
 					'max_file_size' => $max_upload_size . 'b',
+					'mime_types'    => array(
+						array(
+							'title' => esc_html__( 'Zip files', 'wordpress-importer' ),
+							'extensions' => 'zip'
+						),
+						array(
+							'title' => esc_html__( 'XML files', 'wordpress-importer' ),
+							'extensions' => 'xml'
+						)
+					)
 				),
 
 				'file_data_name' => 'import',

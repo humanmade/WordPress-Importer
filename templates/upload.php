@@ -76,7 +76,7 @@
 	<# } else { #>
 
 		<p><?php esc_html_e( 'Success! Your import file is ready, let&#8217;s get started.', 'wordpress-importer' ) ?></p>
-		<p><button type="submit" class="button"><?php esc_html_e( 'Start Import', 'wordpress-importer' ) ?></a></p>
+		<p><button type="submit" class="button"><?php esc_html_e( 'Start Import', 'wordpress-importer' ) ?></button></p>
 
 	<# } #>
 </script>
