@@ -56,7 +56,10 @@
 
 			case 'complete':
 				evtSource.close();
-				jQuery('#import-status-message').text( wxrImport.data.strings.complete );
+				var import_status_msg = jQuery('#import-status-message');
+				import_status_msg.text( wxrImport.data.strings.complete );
+				import_status_msg.removeClass('notice-info');
+				import_status_msg.addClass('notice-success');
 				break;
 		}
 	};

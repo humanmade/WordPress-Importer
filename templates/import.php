@@ -34,7 +34,7 @@ $this->render_header();
 <div class="welcome-panel">
 	<div class="welcome-panel-content">
 		<h2><?php esc_html_e( 'Step 3: Importing', 'wordpress-importer' ) ?></h2>
-		<p id="import-status-message"><?php esc_html_e( 'Now importing.', 'wordpress-importer' ) ?></p>
+		<div id="import-status-message" class="notice notice-info"><?php esc_html_e( 'Now importing.', 'wordpress-importer' ) ?></div>
 
 		<table class="import-status">
 			<thead>
