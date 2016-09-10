@@ -26,7 +26,7 @@ class WXR_Import_UI {
 	 * @param array $mimes Already supported mime types.
 	 */
 	function add_mime_type_xml( $mimes ) {
-			$mimes = array_merge( $mimes, array('xml' => 'application/xml') );
+			$mimes = array_merge( $mimes, array( 'xml' => 'application/xml' ) );
 			return $mimes;
 	}
 
