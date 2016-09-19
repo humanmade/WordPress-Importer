@@ -24,17 +24,17 @@ $script_data = array(
 );
 
 $url = plugins_url( 'assets/import.js', dirname( __FILE__ ) );
-wp_enqueue_script( 'wxr-importer-import', $url, array( 'jquery' ), '20160412', true );
+wp_enqueue_script( 'wxr-importer-import', $url, array( 'jquery' ), '20160909', true );
 wp_localize_script( 'wxr-importer-import', 'wxrImportData', $script_data );
 
-wp_enqueue_style( 'wxr-importer-import', plugins_url( 'assets/import.css', dirname( __FILE__ ) ), array(), '20160412' );
+wp_enqueue_style( 'wxr-importer-import', plugins_url( 'assets/import.css', dirname( __FILE__ ) ), array(), '20160909' );
 
 $this->render_header();
 ?>
 <div class="welcome-panel">
 	<div class="welcome-panel-content">
 		<h2><?php esc_html_e( 'Step 3: Importing', 'wordpress-importer' ) ?></h2>
-		<p id="import-status-message"><?php esc_html_e( 'Now importing.', 'wordpress-importer' ) ?></p>
+		<div id="import-status-message" class="notice notice-info"><?php esc_html_e( 'Now importing.', 'wordpress-importer' ) ?></div>
 
 		<table class="import-status">
 			<thead>

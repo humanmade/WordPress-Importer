@@ -16,6 +16,19 @@ class WXR_Import_UI {
 	public function __construct() {
 		add_action( 'wxr_importer.ui.header', array( $this, 'show_updates_in_header' ) );
 		add_action( 'admin_action_wxr-import-upload', array( $this, 'handle_async_upload' ) );
+		add_filter( 'upload_mimes', array( $this, 'add_mime_type_xml' ) );
+
+	}
+
+	/**
+	 * Add .xml files as supported format in the uploader.
+	 *
+	 * @param array $mimes Already supported mime types.
+	 */
+	public function add_mime_type_xml( $mimes ) {
+		$mimes = array_merge( $mimes, array( 'xml' => 'application/xml' ) );
+
+		return $mimes;
 	}
 
 	/**
