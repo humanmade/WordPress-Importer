@@ -85,10 +85,12 @@
 
 		// Create the media frame.
 		var frame = wp.media({
+			id: 'import-select',
 			// Set the title of the modal.
-			title: "Select",
+			title: options.l10n.frameTitle,
+			multiple: true,
 
-			// Tell the modal to show only images.
+			// Tell the modal to show only xml files.
 			library: {
 				type: '',
 				status: 'private',
@@ -97,7 +99,7 @@
 			// Customize the submit button.
 			button: {
 				// Set the text of the button.
-				text: "Import",
+				text: options.l10n.buttonText,
 				// Tell the button not to close the modal, since we're
 				// going to refresh the page when the image is selected.
 				close: false,
