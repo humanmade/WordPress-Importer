@@ -206,6 +206,12 @@ class WXR_Import_UI {
 	protected function display_author_step() {
 		if ( isset( $_REQUEST['id'] ) ) {
 			$err = $this->handle_select( wp_unslash( $_REQUEST['id'] ) );
+
+			$previous_import = get_post_meta( $this->id, '_importer_state', true );
+			if ( is_a( $previous_import, 'WXR_Importer' ) ) {
+				require __DIR__ . '/templates/resume-import.php';
+				return;
+			}
 		} else {
 			$err = $this->handle_upload();
 		}
