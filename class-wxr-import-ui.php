@@ -506,23 +506,14 @@ class WXR_Import_UI {
 		flush();
 
 		$file = get_attached_file( $this->id );
-		$completed = false;
 		// Register a shutdown function to save the state of the importer
 		// if it didn't complete yet.
-		register_shutdown_function( function() use ( $importer, &$completed ) {
-			if ( true === $completed ) {
-				return;
-			}
-			update_post_meta( $this->id, '_importer_state', $importer );
-			$this->emit_sse_message( array(
-				'action' => 'paused',
-				'node' => $importer->current_node,
-			) );
-			exit;
-		});
+		$this->completed = false;
+		$this->importer = $importer;
+		register_shutdown_function( array( $this, 'pause_import' ) );
 
 		$err = $importer->import( $file );
-		$completed = true;
+		$this->completed = true;
 
 		// Remove the settings to stop future reconnects.
 		delete_post_meta( $this->id, '_wxr_import_settings' );
@@ -539,6 +530,23 @@ class WXR_Import_UI {
 
 		$this->emit_sse_message( $complete );
 		exit;
+	}
+
+	/**
+	 * Pause the importer.
+	 *
+	 * This is run on shutdown, to cause a pause and save of the import
+	 * progress if the importer did not complete yet.
+	 */
+	public function pause_import() {
+		if ( true === $this->completed ) {
+			return;
+		}
+		update_post_meta( $this->id, '_importer_state', $this->importer );
+		$this->emit_sse_message( array(
+			'action' => 'paused',
+			'node' => $importer->current_node,
+		) );
 	}
 
 	/**
