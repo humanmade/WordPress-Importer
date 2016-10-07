@@ -343,15 +343,16 @@ class WXR_Importer extends WP_Importer {
 
 		// Start parsing!
 		while ( $reader->read() ) {
+			// Only deal with element opens
+			if ( $reader->nodeType !== XMLReader::ELEMENT ) {
+				continue;
+			}
+
 			$element_count++;
 			if ( $element_count < $this->current_node ) {
 				continue;
 			}
 			$this->current_node = $element_count;
-			// Only deal with element opens
-			if ( $reader->nodeType !== XMLReader::ELEMENT ) {
-				continue;
-			}
 
 			switch ( $reader->name ) {
 				case 'wp:wxr_version':
