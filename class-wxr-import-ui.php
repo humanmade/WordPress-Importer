@@ -415,9 +415,6 @@ class WXR_Import_UI {
 		$settings = compact( 'mapping', 'fetch_attachments' );
 		update_post_meta( $this->id, '_wxr_import_settings', $settings );
 
-		// Time to run the import!
-		set_time_limit( 0 );
-
 		// Ensure we're not buffered.
 		wp_ob_end_flush_all();
 		flush();
