@@ -56,6 +56,8 @@ class WXR_Importer extends WP_Importer {
 	protected $url_remap = array();
 	protected $featured_images = array();
 
+	public $current_node = 0;
+
 	/**
 	 * Logger instance.
 	 *
@@ -337,9 +339,15 @@ class WXR_Importer extends WP_Importer {
 
 		// Reset other variables
 		$this->base_url = '';
+		$element_count = 0;
 
 		// Start parsing!
 		while ( $reader->read() ) {
+			$element_count++;
+			if ( $element_count < $this->current_node ) {
+				continue;
+			}
+			$this->current_node = $element_count;
 			// Only deal with element opens
 			if ( $reader->nodeType !== XMLReader::ELEMENT ) {
 				continue;
