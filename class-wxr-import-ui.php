@@ -208,7 +208,7 @@ class WXR_Import_UI {
 			$err = $this->handle_select( wp_unslash( $_REQUEST['id'] ) );
 
 			$previous_import = get_post_meta( $this->id, '_importer_state', true );
-			if ( $previous_import instanceof WXR_Importer ) ) {
+			if ( $previous_import instanceof WXR_Importer ) {
 				require __DIR__ . '/templates/resume-import.php';
 				return;
 			}
@@ -470,7 +470,7 @@ class WXR_Import_UI {
 		// Try to restore the importer from a previous run.
 		$importer = get_post_meta( $this->id, '_importer_state', true );
 
-		if ( ! $importer instanceof WXR_Importer ) ) {
+		if ( ! $importer instanceof WXR_Importer ) {
 			$importer = $this->get_importer();
 			if ( ! empty( $mapping['mapping'] ) ) {
 				$importer->set_user_mapping( $mapping['mapping'] );
