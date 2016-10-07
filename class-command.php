@@ -16,6 +16,10 @@ class WXR_Import_Command extends WP_CLI_Command {
 	 *
 	 * [--default-author=<id>]
 	 * : Default author ID to use if invalid user is found in the import data.
+	 *
+	 * [--disable-fetch-attachments]
+	 * : Disable downloading external attachments.
+	 *
 	 */
 	public function import( $args, $assoc_args ) {
 		$logger = new WP_Importer_Logger_CLI();
@@ -34,7 +38,7 @@ class WXR_Import_Command extends WP_CLI_Command {
 		}
 
 		$options = array(
-			'fetch_attachments' => true,
+			'fetch_attachments' => empty( $assoc_args['disable-fetch-attachments'] ),
 		);
 		if ( isset( $assoc_args['default-author'] ) ) {
 			$options['default_author'] = absint( $assoc_args['default-author'] );
