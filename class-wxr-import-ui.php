@@ -467,12 +467,22 @@ class WXR_Import_UI {
 		$mapping = $settings['mapping'];
 		$this->fetch_attachments = (bool) $settings['fetch_attachments'];
 
-		$importer = $this->get_importer();
-		if ( ! empty( $mapping['mapping'] ) ) {
-			$importer->set_user_mapping( $mapping['mapping'] );
-		}
-		if ( ! empty( $mapping['slug_overrides'] ) ) {
-			$importer->set_user_slug_overrides( $mapping['slug_overrides'] );
+		// Try to restore the importer from a previous run.
+		$importer = get_post_meta( $this->id, '_importer_state', true );
+
+		if ( ! is_a( $importer, 'WXR_Importer' ) ) {
+			$importer = $this->get_importer();
+			if ( ! empty( $mapping['mapping'] ) ) {
+				$importer->set_user_mapping( $mapping['mapping'] );
+			}
+			if ( ! empty( $mapping['slug_overrides'] ) ) {
+				$importer->set_user_slug_overrides( $mapping['slug_overrides'] );
+			}
+		} else {
+			$this->emit_sse_message( array(
+				'action' => 'resumed',
+				'node' => $importer->current_node,
+			) );
 		}
 
 		// Are we allowed to create users?
