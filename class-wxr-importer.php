@@ -474,7 +474,7 @@ class WXR_Importer extends WP_Importer {
 		if ( $this->options['aggressive_url_search'] ) {
 			$this->replace_attachment_urls_in_content();
 		}
-		// $this->remap_featured_images();
+		$this->remap_featured_images();
 
 		$this->import_end();
 	}
@@ -902,10 +902,15 @@ class WXR_Importer extends WP_Importer {
 			foreach ( $terms as $term ) {
 				$taxonomy = $term['taxonomy'];
 				$key = sha1( $taxonomy . ':' . $term['slug'] );
-
+                                
+                                $term_exists = term_exists($term['slug'], $taxonomy);
+                                
 				if ( isset( $this->mapping['term'][ $key ] ) ) {
 					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
-				} else {
+				} else if ($term_exists) {
+                                    // if the term already exists in WP, use this...
+                                    $term_ids[ $taxonomy ][] = $term_exists;
+                                }   else {
 					$meta[] = array( 'key' => '_wxr_import_term', 'value' => $term );
 					$requires_remapping = true;
 				}
@@ -2026,13 +2031,21 @@ class WXR_Importer extends WP_Importer {
 	 * Update _thumbnail_id meta to new, imported attachment IDs
 	 */
 	function remap_featured_images() {
-		// cycle through posts that have a featured image
-		foreach ( $this->featured_images as $post_id => $value ) {
-			if ( isset( $this->processed_posts[ $value ] ) ) {
-				$new_id = $this->processed_posts[ $value ];
+		
+            if (empty($this->featured_images)) {
+                return;
+            }    
+                // cycle through posts that have a featured image
+                $this->logger->info("Starting remapping of featured images");
 
+                foreach ( $this->featured_images as $post_id => $value ) {
+			if ( isset( $this->mapping['post'][ $value ] ) ) {
+				$new_id = $this->mapping['post'][ $value ];
+                                
+    
 				// only update if there's a difference
 				if ( $new_id !== $value ) {
+                                    $this->logger->info(sprintf("Remapping featured image ID %d to new ID %d for post ID %d",$value, $new_id, $post_id ));
 					update_post_meta( $post_id, '_thumbnail_id', $new_id );
 				}
 			}
