@@ -2051,7 +2051,7 @@ class WXR_Importer extends WP_Importer {
 		foreach ( $this->featured_images as $post_id => $value ) {
 			if ( isset( $this->mapping['post'][ $value ] ) ) {
 				$new_id = $this->mapping['post'][ $value ];
-	
+
 				// only update if there's a difference
 				if ( $new_id !== $value ) {
 					$this->logger->info( sprintf( 'Remapping featured image ID %d to new ID %d for post ID %d',$value, $new_id, $post_id ) );
