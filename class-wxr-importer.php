@@ -909,14 +909,14 @@ class WXR_Importer extends WP_Importer {
 					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
 				} else if ( $term_exists ) {
 					// if the term already exists in WP, use this...
-					$term_ids[$taxonomy][] = intval( $term_exists['term_id'] );
+					$term_ids[ $taxonomy ][] = intval( $term_exists['term_id'] );
 				} else {
 					$result = wp_insert_term( $term['name'], $taxonomy, array( 'slug' => $term['slug'] ) );
 					if ( ! is_wp_error( $result ) ) {
-						$this->logger->info(sprintf( __( 'Added term %s %s', 'wordpress-importer'), $term['taxonomy'], $term['name'] ) );
-						$term_ids[$taxonomy][] = intval( $result['term_id'] );
+						$this->logger->info( sprintf( __( 'Added term %s %s', 'wordpress-importer' ), $term['taxonomy'], $term['name'] ) );
+						$term_ids[ $taxonomy ][] = intval( $result['term_id'] );
 					} else {
-						$this->logger->warning( sprintf( __( 'Failed to import %s %s', 'wordpress-importer'), $term['taxonomy'], $term['name'] ) );
+						$this->logger->warning( sprintf( __( 'Failed to import %s %s', 'wordpress-importer' ), $term['taxonomy'], $term['name'] ) );
 						$this->logger->debug( $result->get_error_message() );
 						do_action( 'wp_import_insert_term_failed', $t, $term );
 
@@ -2042,20 +2042,19 @@ class WXR_Importer extends WP_Importer {
 	 */
 	function remap_featured_images() {
 
-			if ( empty( $this->featured_images ) ) {
-				return;
-			}
-				// cycle through posts that have a featured image
-				$this->logger->info( 'Starting remapping of featured images' );
+		if ( empty( $this->featured_images ) ) {
+			return;
+		}
+		// cycle through posts that have a featured image
+		$this->logger->info( 'Starting remapping of featured images' );
 
-				foreach ( $this->featured_images as $post_id => $value ) {
+		foreach ( $this->featured_images as $post_id => $value ) {
 			if ( isset( $this->mapping['post'][ $value ] ) ) {
 				$new_id = $this->mapping['post'][ $value ];
-
 	
 				// only update if there's a difference
 				if ( $new_id !== $value ) {
-									$this->logger->info(sprintf( 'Remapping featured image ID %d to new ID %d for post ID %d',$value, $new_id, $post_id ) );
+					$this->logger->info( sprintf( 'Remapping featured image ID %d to new ID %d for post ID %d',$value, $new_id, $post_id ) );
 					update_post_meta( $post_id, '_thumbnail_id', $new_id );
 				}
 			}
