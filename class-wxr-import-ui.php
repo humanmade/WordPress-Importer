@@ -553,6 +553,8 @@ class WXR_Import_UI {
 	protected function author_select( $index, $author ) {
 		esc_html_e( 'Import author:', 'wordpress-importer' );
 		$supports_extras = version_compare( $this->version, '1.0', '>' );
+		$selected        = 0;
+		$login           = $author['user_login'];
 
 		if ( $supports_extras ) {
 			$name = sprintf( '%s (%s)', $author['display_name'], $author['user_login'] );
@@ -565,6 +567,18 @@ class WXR_Import_UI {
 			echo '<div style="margin-left:18px">';
 		}
 
+		$user_exists = get_user_by( 'login', $author['user_login'] );
+		if ( $user_exists ) {
+			$selected = $user_exists->ID;
+			$login    = '';
+			if ( is_multisite() ) {
+				$user_blogs = array_keys( get_blogs_of_user( $user_exists->ID ) );
+				if ( ! in_array( get_current_blog_id(), $user_blogs ) ) {
+					$selected = 0;
+				}
+			}
+		}
+
 		$create_users = $this->allow_create_users();
 		if ( $create_users ) {
 			if ( ! $supports_extras ) {
@@ -572,7 +586,7 @@ class WXR_Import_UI {
 				$value = '';
 			} else {
 				esc_html_e( 'as a new user:', 'wordpress-importer' );
-				$value = sanitize_user( $author['user_login'], true );
+				$value = sanitize_user( $login, true );
 			}
 
 			printf(
@@ -592,6 +606,7 @@ class WXR_Import_UI {
 			'name' => sprintf( 'user_map[%d]', $index ),
 			'multi' => true,
 			'show_option_all' => __( '- Select -', 'wordpress-importer' ),
+			'selected' => $selected,
 		));
 
 		printf(
