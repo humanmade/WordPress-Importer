@@ -1624,7 +1624,7 @@ class WXR_Importer extends WP_Importer {
 			$key = array_search( $child->tagName, $tag_name );
 			if ( $key ) {
 				$data[ $key ] = $child->textContent;
-			} elseif ( $child->tagName == 'wp:termmeta' ) {
+			} elseif ( $child->tagName === 'wp:termmeta' ) {
 				$meta_item = $this->parse_meta_node( $child );
 				if ( ! empty( $meta_item ) ) {
 					$meta[] = $meta_item;
@@ -1735,7 +1735,7 @@ class WXR_Importer extends WP_Importer {
 
 		$this->mapping['term'][ $mapping_key ] = $term_id;
 		$this->mapping['term_id'][ $original_id ] = $term_id;
-	
+
 		$this->logger->info( sprintf(
 			__( 'Imported "%s" (%s)', 'wordpress-importer' ),
 			$data['name'],
@@ -1746,7 +1746,7 @@ class WXR_Importer extends WP_Importer {
 			$original_id,
 			$term_id
 		) );
-		
+
 		$this->process_term_meta( $meta, $term_id, $term );
 
 		do_action( 'wp_import_insert_term', $term_id, $data );
@@ -1759,7 +1759,7 @@ class WXR_Importer extends WP_Importer {
 		 */
 		do_action( 'wxr_importer.processed.term', $term_id, $data );
 	}
-	
+
 	/**
 	 * Process and import term meta items.
 	 *
@@ -1772,7 +1772,7 @@ class WXR_Importer extends WP_Importer {
 		if ( empty( $meta ) ) {
 			return true;
 		}
-	
+
 		foreach ( $meta as $meta_item ) {
 			/**
 			 * Pre-process term meta data.
@@ -1784,7 +1784,7 @@ class WXR_Importer extends WP_Importer {
 			if ( empty( $meta_item ) ) {
 				return false;
 			}
-	
+
 			$key = apply_filters( 'import_term_meta_key', $meta_item['key'], $term_id, $term );
 
 			if ( ! $key ) {
@@ -1797,7 +1797,7 @@ class WXR_Importer extends WP_Importer {
 			add_term_meta( $term_id, $key, $value );
 			do_action( 'import_term_meta', $term_id, $key, $value );
 		}
-	
+
 		return true;
 	}
 
