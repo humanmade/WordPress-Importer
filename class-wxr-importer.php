@@ -903,28 +903,13 @@ class WXR_Importer extends WP_Importer {
 				$taxonomy = $term['taxonomy'];
 				$key = sha1( $taxonomy . ':' . $term['slug'] );
 
-				$term_exists = term_exists( $term['slug'], $taxonomy );
-
 				if ( isset( $this->mapping['term'][ $key ] ) ) {
 					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
-				} else if ( $term_exists ) {
-					// if the term already exists in WP, use this...
-					$term_ids[ $taxonomy ][] = intval( $term_exists['term_id'] );
 				} else {
-					$result = wp_insert_term( $term['name'], $taxonomy, array( 'slug' => $term['slug'] ) );
-					if ( ! is_wp_error( $result ) ) {
-						$this->logger->info( sprintf( __( 'Added term %s %s', 'wordpress-importer' ), $term['taxonomy'], $term['name'] ) );
-						$term_ids[ $taxonomy ][] = intval( $result['term_id'] );
-					} else {
-						$this->logger->warning( sprintf( __( 'Failed to import %s %s', 'wordpress-importer' ), $term['taxonomy'], $term['name'] ) );
-						$this->logger->debug( $result->get_error_message() );
-						do_action( 'wp_import_insert_term_failed', $t, $term );
-
 						$meta[] = array( 'key' => '_wxr_import_term', 'value' => $term );
 						$requires_remapping = true;
 					}
 				}
-			}
 
 			foreach ( $term_ids as $tax => $ids ) {
 				$tt_ids = wp_set_post_terms( $post_id, $ids, $tax );
