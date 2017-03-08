@@ -572,7 +572,7 @@ class WXR_Import_UI {
 				$value = '';
 			} else {
 				esc_html_e( 'as a new user:', 'wordpress-importer' );
-				$value = sanitize_user( $login, true );
+				$value = sanitize_user( $author['user_login'], true );
 			}
 
 			printf(
