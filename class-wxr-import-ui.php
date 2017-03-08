@@ -662,7 +662,7 @@ class WXR_Import_UI {
 		foreach ( (array) $args['imported_authors'] as $i => $old_login ) {
 			$old_id = isset( $old_ids[ $i ] ) ? (int) $old_ids[ $i ] : false;
 
-			if ( isset( $map[ $i ] ) ) {
+			if ( ! empty( $map[ $i ] ) ) {
 				$user = get_user_by( 'id', (int) $map[ $i ] );
 
 				if ( isset( $user->ID ) ) {
@@ -672,7 +672,7 @@ class WXR_Import_UI {
 						'new_id'   => $user->ID,
 					);
 				}
-			} elseif ( isset( $new_users[ $i ] ) ) {
+			} elseif ( ! empty( $new_users[ $i ] ) ) {
 				if ( $new_users[ $i ] !== $old_login ) {
 					$slug_overrides[ $old_login ] = $new_users[ $i ];
 				}
