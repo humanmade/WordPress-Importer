@@ -1442,7 +1442,7 @@ class WXR_Importer extends WP_Importer {
 			$key = array_search( $child->tagName, $tag_name );
 			if ( $key ) {
 				$data[ $key ] = $child->textContent;
-			} else if ( $child->tagName == 'wp:termmeta' ) {
+			} elseif ( $child->tagName == 'wp:termmeta' ) {
 				$meta_item = $this->parse_meta_node( $child );
 				if ( ! empty( $meta_item ) ) {
 					$meta[] = $meta_item;
@@ -1578,17 +1578,16 @@ class WXR_Importer extends WP_Importer {
 			}
 	
 			$key = apply_filters( 'import_term_meta_key', $meta_item['key'], $term_id, $term );
-			$value = false;
 
-			if ( $key ) {
-				// export gets meta straight from the DB so could have a serialized string
-				if ( ! $value ) {
-					$value = maybe_unserialize( $meta_item['value'] );
-				}
-	
-				add_term_meta( $term_id, $key, $value );
-				do_action( 'import_term_meta', $term_id, $key, $value );
+			if ( ! $key ) {
+				continue;
 			}
+
+			// export gets meta straight from the DB so could have a serialized string
+			$value = maybe_unserialize( $meta_item['value'] );
+
+			add_term_meta( $term_id, $key, $value );
+			do_action( 'import_term_meta', $term_id, $key, $value );
 		}
 	
 		return true;
