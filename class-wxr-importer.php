@@ -1782,7 +1782,7 @@ class WXR_Importer extends WP_Importer {
 			 */
 			$meta_item = apply_filters( 'wxr_importer.pre_process.term_meta', $meta_item, $term_id );
 			if ( empty( $meta_item ) ) {
-				return false;
+				continue;
 			}
 
 			$key = apply_filters( 'import_term_meta_key', $meta_item['key'], $term_id, $term );
