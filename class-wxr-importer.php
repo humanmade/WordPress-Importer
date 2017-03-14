@@ -1778,7 +1778,7 @@ class WXR_Importer extends WP_Importer {
 
 		// request failed
 		if ( is_wp_error( $response ) ) {
-			unlink( $upload['file'] );
+			$this->unlink_file( $upload['file'] );
 			return $response;
 		}
 
@@ -1786,7 +1786,7 @@ class WXR_Importer extends WP_Importer {
 
 		// make sure the fetch was successful
 		if ( $code !== 200 ) {
-			unlink( $upload['file'] );
+			$this->unlink_file( $upload['file'] );
 			return new WP_Error(
 				'import_file_error',
 				sprintf(
@@ -1802,23 +1802,37 @@ class WXR_Importer extends WP_Importer {
 		$headers = wp_remote_retrieve_headers( $response );
 
 		if ( isset( $headers['content-length'] ) && $filesize !== (int) $headers['content-length'] ) {
-			unlink( $upload['file'] );
+			$this->unlink_file( $upload['file'] );
 			return new WP_Error( 'import_file_error', __( 'Remote file is incorrect size', 'wordpress-importer' ) );
 		}
 
 		if ( 0 === $filesize ) {
-			unlink( $upload['file'] );
+			$this->unlink_file( $upload['file'] );
 			return new WP_Error( 'import_file_error', __( 'Zero size file downloaded', 'wordpress-importer' ) );
 		}
 
 		$max_size = (int) $this->max_attachment_size();
 		if ( ! empty( $max_size ) && $filesize > $max_size ) {
-			unlink( $upload['file'] );
+			$this->unlink_file( $upload['file'] );
 			$message = sprintf( __( 'Remote file is too large, limit is %s', 'wordpress-importer' ), size_format( $max_size ) );
 			return new WP_Error( 'import_file_error', $message );
 		}
 
 		return $upload;
+	}
+
+	/**
+	 * Delete file from the server if it is writable and it exists
+	 *
+	 * @param $file
+	 *
+	 * @return bool
+	 */
+	protected function unlink_file( $file ) {
+		if ( file_exists( $file['file'] ) && is_writable( $file['file'] ) && unlink( $file['file'] ) ) {
+			return true;
+		}
+		return false;
 	}
 
 	protected function post_process() {
