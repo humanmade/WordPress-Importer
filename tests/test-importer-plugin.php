@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @group import
+ */
 class WP_Test_Importer_Plugin extends WP_UnitTestCase {
 	/**
 	 * The plugin should be installed and activated.
