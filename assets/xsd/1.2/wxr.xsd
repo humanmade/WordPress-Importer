@@ -1,0 +1,775 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE xs:schema [
+<!--
+	These entity declarations are to ensure the consistency of the use of namespaceURIs in the various
+	@targetNamespace's throughout this schema...and to make it easier to create/maintain schemas for
+	WXR 1.1 and 1.0 (because then I can just copy this schema document, edit the WXR_Version entity
+	decl and remove any element decls that weren't in that previous version).
+	-->
+
+<!ENTITY RSS_Version '2.0'>
+
+<!ENTITY WXR_Version '1.2'>
+<!ENTITY WXR_NamespaceURI 'http://wordpress.org/export/&WXR_Version;/'>
+<!ENTITY WXR_Excerpt_NamespaceURI '&WXR_NamespaceURI;excerpt/'>
+
+<!ENTITY Dublin_Core_Version '1.1'>
+<!ENTITY Dublin_Core_NamespaceURI 'http://purl.org/dc/elements/&Dublin_Core_Version;/'>
+
+<!ENTITY RSS_Content_Module_Version '1.0'>
+<!ENTITY RSS_Content_Module_NamespaceURI 'http://purl.org/rss/&RSS_Content_Module_Version;/modules/content/'>
+]>
+<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema'
+		xmlns:wp='&WXR_NamespaceURI;'
+		xmlns:excerpt='&WXR_Excerpt_NamespaceURI;'
+		elementFormDefault='qualified' xml:lang='EN'
+		targetNamespace='&WXR_NamespaceURI;'
+		version='&WXR_Version;'>
+
+	<xs:annotation>
+		<xs:documentation>
+			This is a proof-of-concept XML Schema 1.1 schema for WordPress Export RSS (WXR) version &WXR_Version;.  		
+		</xs:documentation>
+		<xs:documentation>
+			Author: Paul V. Biron/Sparrow Hawk Computing
+			Email: paul@SparrowHawkComputing.com
+			Web: http://sparrowhawkcomputing.com
+			WordPress: pbiron
+			Slack: pbiron
+		</xs:documentation>
+		<xs:documentation>
+			This schema is available at http://github.com/pbiron/wxr/1.2.  If you find any errors in it
+			or have suggestions for improvements, please open an issue there.
+			
+			HTML browsable documentation for this schema is available at http://sparrowhawkcomputing.com/wxr/1.2/docs/wxr.html.
+		</xs:documentation>
+		<xs:documentation>
+			This schema is intended to serve primarily as documentation of WXR.
+			
+			There are 2 primary audiences for this schema: 1) WP Core contributors involveed in maintaining
+			the export/import code (i.e., to serve as a check for keeping the exporter/importer in sync
+			when making modifications); and 2) plugin authors who want to write their own export/import code.
+			
+			The primary purpose of documentation has informed how I have structured this schema (e.g.,
+			the use of the 'rss_item_elements' and 'wp:post_elements' model groups make generated
+			documentation more explanatory).
+		</xs:documentation>
+		<xs:documentation>
+			This schema is NOT intended to be used for run-time validation.  The primary reason for this is
+			that the XML parsers that are included in PHP do NOT support XML Schema 1.1 (because they are
+			all based on libxml, which only supports XML Schema 1.0) :-)
+			
+			I could write an XML Schema 1.0 schema if folks want to do run-time validation, but I don't think
+			it would be worth doing so: 1) the importer doesn't really need it; and 2) the expressivity of
+			XML Schema 1.0 is not rich enough to write a very accurate schema for WXR (e.g., the schema
+			would have to pretty 'loose', and would report instances as valid even they weren't).
+			
+			For that matter, even this XML Schema 1.1 schema is a little 'loose' in some respects
+			(and too 'tight' in a few others). 
+		</xs:documentation>
+		<xs:documentation>
+			As I dug deeper into the Core export/import code (starting with my patch for
+			https://core.trac.wordpress.org/ticket/27896 and continuing in my attempts to make
+			https://github.com/humanmade/WordPress-Importer be namespace-aware) I've started to come up with
+			a list of changes that I think should be made to WXR.  Some of those are documented in
+			@todo's throughout this schema (search for 'trac ticket').  But I'll list a really
+			big one right here at the top.
+			
+			@todo open a trac ticket to consider changing the namespaceURI versioing policy for WXR
+			(not the policy, to the extent there is one, one when to version WXR, but the defacto 'policy'
+			of including the version number in the namespaceURI).
+			
+			Doing namespace-aware parsing (that is backwards compatible in the sense of handling WXR files
+			from different versions with the same code) would be MUCH easier if the WXR namespaceURI did
+			NOT change with each version.  That is, I think the WXR namespaceURI should be something like
+			'http://wordpress.org/export/' regardless of WXR version.  After all, there is the
+			<wp:wxr_version /> element (or better yet, a rss/@wp:version attribute, as mentioned below in a
+			@todo on the definition of <wp:wxr_version />).
+			
+			I recognize that this change would represent a MAJOR backwards imcompatibility (and thus will
+			require A LOT of discussion and concensus building before it could be enacted) but it would
+			would make FUTURE changes to WXR and the corresponding export/import code easier to deal with.
+			So, I'm just throwing this out there at this point to start that discussion BEFORE I open the
+			various trac tickets mentioned throughout this schema (and probably a few more that I've forgotten
+			during the course of writing this schema).
+		</xs:documentation>
+		<xs:documentation>
+			@todo open a meta trac ticket to consider adding documentation generated from this schema (assuming
+			it, or something like it, is accepted as an accurate/useful representation of WXR) to
+			DevHub.
+		</xs:documentation>
+		<xs:documentation>
+			@todo open a trac ticket to consider whether we should declare all WXR elements to have
+			open content.  That is, should they be allowed to contain elements/attributes not declared
+			in this schema.  Doing so should NOT impact the standard importer (as it would just ignore them)
+			and MIGHT be beneficial for several reasons, among them: 1) it could help with versioning
+			this schema (i.e., any elements added to the WXR vocabulary after this version would still
+			allow this schema to be used for WXR exports that contained them without raising raising
+			validatation errors); 2) would allow plugins to add WXR documents for their own purposes;
+			3) ???.
+			
+			Note: In conformance with the RSS 2.0 spec, the rss-20.xsd schema that is used in conjunction
+			with this schema already allows ANY element in any namespace (including the WXR namespace
+			or a namespace used by a plugin) as a child of ANY RSS element.  This @todo has to do with
+			such elements appearing as children of elements in the WXR namespace.  For instance,
+			should the following be considered a valid WXR &WXR_Version; instance:
+			
+				...
+				<wp:term>
+					<wp:term_id>123</wp:term_id>
+					<wp:cool_term_feature_added_in_a_future_version />
+					<cool_plugin:cool_plugin_term_feature xmlns:cool_plugin='urn:cool_plugin_uri' />
+					...
+				</wp:term>
+				...
+				
+		</xs:documentation>
+	</xs:annotation>
+	
+	<xs:import namespace='&WXR_Excerpt_NamespaceURI;' schemaLocation='wxr_excerpt.xsd' />
+	
+	<xs:simpleType name='email'>
+		<xs:restriction base='xs:string'>
+			<xs:annotation>
+				<xs:documentation>
+					@todo check whether WP does any kind of sanitation on email addresses, and if
+					so, define this as a non-trivial restriction of xs:string with
+					a regex pattern that matches the range of that sanitiation function. 
+				</xs:documentation>
+			</xs:annotation>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name='date_time'>
+		<xs:annotation>
+			<xs:documentation>
+				Represents the lexical space of the date/time 'fields' of a WP_Post.
+			</xs:documentation>
+			<xs:documentation>
+				@todo consider doing this as a trivial restriction of xs:string, because
+				it might not be worth the trouble of maintaining the regex in the <xs:pattern />.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:union>
+			<xs:simpleType>
+				<xs:annotation>
+					<xs:documentation>
+						@todo I borrowed this regex from https://stackoverflow.com/a/15967451/7751811.
+						While I've tested this with several exports from multiple WP sites and
+						it appears to be correct, I haven't done a detailed analysis of the regex
+						to prove it to myself that it is actually correct.
+					</xs:documentation>
+					<xs:documentation>
+						Actually, upon further testing it regex was wrong: it had incorrect
+						months which can have 31 vs only 30 days.  I have corrected that.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:restriction base='xs:string'>
+					<xs:pattern value='((((19|20)([2468][048]|[13579][26]|0[48])|2000)-02-29|((19|20)[0-9]{2}-(0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01])|(19|20)[0-9]{2}-(0[2469]|11)-(0[1-9]|[12][0-9]|30)|(19|20)[0-9]{2}-02-(0[1-9]|1[0-9]|2[0-8])))\s([01][0-9]|2[0-3]):([012345][0-9]):([012345][0-9]))'>
+				</xs:pattern>				
+			</xs:restriction>
+			</xs:simpleType>
+			<xs:simpleType>
+				<xs:annotation>
+					<xs:documentation>
+						@todo I'm not sure why, but I've seen exports that have this value for one
+						or another of the date/time fields.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:restriction base='xs:string'>
+					<xs:enumeration value='0000-00-00 00:00:00'>
+					</xs:enumeration>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:union>
+	</xs:simpleType>
+	
+	<xs:simpleType name='boolean_as_int_string'>
+		<xs:annotation>
+			<xs:documentation>
+				Represents a boolean value as a string ('0' for false, '1' for true). 
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base='xs:boolean'>
+			<xs:pattern value='0|1' />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name='comment_ping_status'>
+		<xs:annotation>
+			<xs:documentation>
+				Represents the (comment|ping)_status of a post.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base='xs:string'>
+			<xs:annotation>
+				<xs:documentation>
+					@todo check whether this enumerated lexical space covers all possible values,
+					i.e., this may be too restrictive as it might be possible for plugins
+					to use some other status.
+				</xs:documentation>
+				<xs:documentation>
+					@todo I've seen exports where <wp:comment_status/> and <wp:comment_status/>
+					were 'close' and other times they were 'closed' (within the same WXR document).
+					I would think one or the other of those values but not both. 
+				</xs:documentation>
+			</xs:annotation>
+			<xs:enumeration value='open' />
+			<xs:enumeration value='closed' />
+			<xs:enumeration value='close' />
+		</xs:restriction>
+	</xs:simpleType>				
+	
+	<xs:simpleType name='key'>
+		<xs:annotation>
+			<xs:documentation>
+				Represents the lexical space of a WP 'key'.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base='xs:string'>
+			<xs:annotation>
+				<xs:documentation>
+					@todo define this as a non-trivial restriction of xs:string whose lexical space is the
+					range of sanitize_key().
+				</xs:documentation>
+			</xs:annotation>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name='post_type'>
+		<xs:annotation>
+			<xs:documentation>
+				Represents the lexical space of a post_type name.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base='wp:key'>
+			<xs:maxLength value='20' />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name='term' abstract='true'>
+		<xs:annotation>
+			<xs:documentation>
+				This type serves as the base type for the WXR elements that represent WP_Term's
+				and contains declarations for those elements that are common between them.
+			</xs:documentation>
+			<xs:documentation>
+				@todo open a trac ticket to consider whether to harmonize ALL of the taxonomy
+				related WXR elements...that is, we should probably use <wp:term_description/> for
+				ALL taxonomy elements, rather than using <wp:category_description/> and <wp:tag_description/>
+				
+				I realize that there are historical reasons for the current markup and that making
+				this change will mean MAJOR backwards imcompatibility, but we should still consider it.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name='term_id' type='xs:positiveInteger'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the term_id of the WP_Term.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='termmeta' type='wp:meta' minOccurs='0' maxOccurs='unbounded'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents a single term meta associated with the WP_Term.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:all>
+	</xs:complexType>
+	
+	<xs:complexType name='meta'>
+		<xs:annotation>
+			<xs:documentation>
+				Represents a single WP Meta (e.g., (post|term|comment)_meta).
+			</xs:documentation>
+		</xs:annotation>
+			<xs:all>
+				<xs:element name='meta_key' type='wp:key'>
+					<xs:annotation>
+						<xs:documentation>
+							Represents the meta_key of the meta.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name='meta_value' type='xs:string'>
+					<xs:annotation>
+						<xs:documentation>
+							Represents the meta_value of the meta. 
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+			</xs:all>
+	</xs:complexType>
+	
+	<xs:group name='post_elements'>
+		<xs:annotation>
+			<xs:documentation>
+				Represents those parts of a WP_Post for which there is no standard
+				RSS element.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element ref='excerpt:encoded' />
+			<xs:element name='post_id' type='xs:nonNegativeInteger'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the ID of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='post_date' type='wp:date_time'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the post_date of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='post_date_gmt' type='wp:date_time'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the post_date_gmt of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='comment_status' type='wp:comment_ping_status'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the comment_status of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='ping_status' type='wp:comment_ping_status'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the ping_status of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='post_name' type='xs:string'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the slug of the WP_Post.
+					</xs:documentation>
+					<xs:documentation>
+						@todo consider defining a restriction of xs:string whose lexical space is
+						identical to the range of sanitize_title().
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='status' type='xs:string'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the post_status of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='post_parent' type='xs:nonNegativeInteger'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the ID of the parent of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='menu_order' type='xs:int'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the menu_order of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='post_type' type='wp:post_type'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the post_type of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='post_password' type='xs:string'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the post_password of the WP_Post.  Will be the empty string when the
+						post is NOT password protected.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='is_sticky' type='wp:boolean_as_int_string'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents whether the WP_Post is sticky.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='attachment_url' type='xs:anyURI' minOccurs='0'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the URL for the WP_Post whose post_type is 'attachment'.  Will not be present if
+						the post_type is not 'attachment.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='postmeta' type='wp:meta' minOccurs='0' maxOccurs='unbounded'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents a single post meta associated with the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='comment' minOccurs='0' maxOccurs='unbounded'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents a single WP_Comment associated with the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:all>
+						<xs:element name='comment_id' type='xs:positiveInteger'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the ID of the WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='comment_author' type='xs:string'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the comment_author of the WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='comment_author_email' type='wp:email'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the comment_author_email of the WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='comment_author_url' type='xs:anyURI'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the comment_author_url of the WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='comment_author_IP'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the comment_author_IP of the WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base='xs:string'>
+									<xs:pattern value='\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|'>
+										<xs:annotation>
+											<xs:documentation>
+												This pattern matches an IPv4 IP address
+												(or the empty string, which can sometimes occur).
+											</xs:documentation>
+										</xs:annotation>
+									</xs:pattern>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+						<xs:element name='comment_date' type='wp:date_time'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the comment_date of a WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='comment_date_gmt' type='wp:date_time'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the comment_date_gmt of a WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='comment_content' type='xs:string'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the comment_content of a WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='comment_approved' type='xs:string'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the comment_approved of a WP_Comment.
+								</xs:documentation>
+								<xs:documentation>
+									@todo Should the type of this element be a restriction
+									of xs:string that enumerates the possible values?  At this
+									time I'm not sure what the values for that enumeration
+									would be so I'm leaving it as xs:string.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='comment_type' type='xs:string'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the comment_type of a WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='comment_parent' type='xs:nonNegativeInteger'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the comment_parent of a WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='comment_user_id' type='xs:nonNegativeInteger'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the user_id of a WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='commentmeta' type='wp:meta' minOccurs='0' maxOccurs='unbounded'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents a single meta associated with a WP_Comment.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+	</xs:group>
+
+	<xs:group name='channel_elements'>
+		<xs:annotation>
+			<xs:documentation>
+				This model group consists of the WXR elements that are output at the rss/channel level.  
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name='wxr_version'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the version of WXR used to generate a WXR file. 
+					</xs:documentation>
+					<xs:documentation>
+						@todo open a trac ticket to deprecate this element and replace it with
+						rss/@wp:version to help streaming importers more easily (and much sooner) detect
+						whether they are able to process a particular WXR file.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base='xs:decimal'>
+						<xs:enumeration value='&WXR_Version;'  />
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name='base_site_url' type='xs:anyURI'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the URL of the site for which a WXR file is an export.
+						
+						In a non-multisite setup, this will be the same as <wp:base_blog_url />.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='base_blog_url' type='xs:anyURI'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the URL of the blog for which a WXR file is an export.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='author' minOccurs='0' maxOccurs='unbounded'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents an single WP_User that is the author of at least one WP_Post in the export.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:all>
+						<xs:annotation>
+							<xs:documentation>
+								This is an all group to match the behavior of the import plugin, i.e. the order in which these
+								elements occurs is irrelavent.
+							</xs:documentation>
+							<xs:documentation>
+								The order of elements in this content model is the order they are output by WP's export processes.
+							</xs:documentation>
+						</xs:annotation>
+						<xs:element name='author_id' type='xs:positiveInteger'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the ID of the WP_User.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='author_login' type='xs:string'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the user_login of the WP_User.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='author_email' type='wp:email'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the user_email of the WP_User.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='author_display_name' type='xs:string'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the display_name of the WP_User.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='author_first_name' type='xs:string'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the value of the usermeta with whose meta_key is 'first_name' of the WP_User.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name='author_last_name' type='xs:string'>
+							<xs:annotation>
+								<xs:documentation>
+									Represents the value of the usermeta with whose meta_key is 'last_name' of the WP_User.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+			<xs:group ref='wp:term_elements'  />
+		</xs:all>
+	</xs:group>
+
+	<xs:group name='term_elements'>
+		<xs:annotation>
+			<xs:documentation>
+				This model group consists of the WXR elements that represent exported categories, tags and terms.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name='category' minOccurs='0' maxOccurs='unbounded'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents a single WP_Term whose taxonomy is 'category'.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base='wp:term'>
+							<xs:all>
+								<xs:annotation>
+									<xs:documentation>
+										This is an all group to match the behavior of the import plugin, i.e. the order in which these
+										elements occurs is irrelavent.
+									</xs:documentation>
+									<xs:documentation>
+										The order of elements in this content model is the order they are output by WP's export processes.
+									</xs:documentation>
+								</xs:annotation>
+								<xs:element name='category_nicename' type='xs:string' />
+								<xs:element name='category_parent' type='xs:string' />
+								<xs:element name='cat_name' type='xs:string' />
+								<xs:element name='category_description' type='xs:string' minOccurs='0' />
+							</xs:all>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name='tag' minOccurs='0' maxOccurs='unbounded'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents a single WP_Term whose taxonomy is 'post_tag'.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base='wp:term'>
+							<xs:all>
+								<xs:annotation>
+									<xs:documentation>
+										This is an all group to match the behavior of the import plugin, i.e. the order in which these
+										elements occurs is irrelavent.
+									</xs:documentation>
+									<xs:documentation>
+										The order of elements in this content model is the order they are output by WP's export processes.
+									</xs:documentation>
+								</xs:annotation>
+								<xs:element name='tag_slug' type='xs:string' />
+								<xs:element name='tag_name' type='xs:string' />
+								<xs:element name='tag_description' type='xs:string' minOccurs='0' />
+							</xs:all>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name='term' minOccurs='0' maxOccurs='unbounded'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents a single WP_Term from a custom taxonomy (including those whose taxonomy is 'nav_menu').
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base='wp:term'>
+							<xs:all>
+								<xs:annotation>
+									<xs:documentation>
+										This is an all group to match the behavior of the import plugin, i.e. the order in which these
+										elements occurs is irrelavent.
+									</xs:documentation>
+									<xs:documentation>
+										The order of elements in this content model is the order they are output by WP's export processes.
+									</xs:documentation>
+								</xs:annotation>
+								<xs:element name='term_taxonomy' type='xs:string'>
+									<xs:annotation>
+										<xs:documentation>
+											Represents the term_taxonomy of the WP_Term.
+										</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+								<xs:element name='term_slug' type='wp:key'>
+									<xs:annotation>
+										<xs:documentation>
+											Represents the slug of the WP_Term.
+										</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+								<xs:element name='term_parent' type='wp:key' minOccurs='0'>
+									<xs:annotation>
+										<xs:documentation>
+											Represents the slug of parent of the WP_Term.
+										</xs:documentation>
+										<xs:documentation>
+											Will be absent when <wp:term_taxonomy/> contains 'nav_menu'. 
+										</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+								<xs:element name='term_name' type='xs:string'>
+									<xs:annotation>
+										<xs:documentation>
+											Represents the name of the WP_Term.
+										</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+								<xs:element name='term_description' type='xs:string' minOccurs='0'>
+									<xs:annotation>
+										<xs:documentation>
+											Represents the description of the WP_Term.
+										</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:all>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+	</xs:group>
+</xs:schema>

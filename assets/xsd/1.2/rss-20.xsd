@@ -1,0 +1,421 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE xs:schema [
+<!--
+  These entity declarations are to ensure the consistency of the use of namespaceURIs in the various
+  @targetNamespace's throughout this schema...and to make it easier to create/maintain schemas for
+  WXR 1.1 and 1.0 (because then I can just copy this schema document, edit the WXR_Version entity
+  decl and remove any element decls that weren't in that previous version).
+  -->
+
+<!ENTITY RSS_Version '2.0'>
+
+<!ENTITY WXR_Version '1.2'>
+<!ENTITY WXR_NamespaceURI 'http://wordpress.org/export/&WXR_Version;/'>
+<!ENTITY WXR_Excerpt_NamespaceURI '&WXR_NamespaceURI;excerpt/'>
+
+<!ENTITY Dublin_Core_Version '1.1'>
+<!ENTITY Dublin_Core_NamespaceURI 'http://purl.org/dc/elements/&Dublin_Core_Version;/'>
+
+<!ENTITY RSS_Content_Module_Version '1.0'>
+<!ENTITY RSS_Content_Module_NamespaceURI 'http://purl.org/rss/&RSS_Content_Module_Version;/modules/content/'>
+]>
+<xs:schema
+		xmlns:xs='http://www.w3.org/2001/XMLSchema'
+		xmlns:wp='&WXR_NamespaceURI;'
+		xmlns:content='&RSS_Content_Module_NamespaceURI;'
+		xmlns:dc='&Dublin_Core_NamespaceURI;'
+		elementFormDefault='unqualified'
+		version='&RSS_Version;'>
+	<xs:annotation>
+		<xs:documentation>
+			This XML Schema 1.1 schema represents the subset of RSS used by the WXR &WXR_Version;. 
+		</xs:documentation>
+		<xs:documentation source='http://www.rssboard.org/rss-specification' />
+		<xs:documentation>
+			All of the model groups defined in this schema are <xs:all/> groups, meaning
+			that the order of child elements is irrelevant.  Not only does this conform to the RSS
+			spec, but it could also simplify the generation of WXR documents.  However, see the
+			documentation of the model group in the <channel/> element regarding the implications of
+			this for importers that use 'true' streaming parsers.
+		</xs:documentation>
+	</xs:annotation>
+
+	<xs:import namespace='&Dublin_Core_NamespaceURI;' schemaLocation='dc.xsd' />
+	<xs:import namespace='&RSS_Content_Module_NamespaceURI;' schemaLocation='rss_content.xsd' />
+	<xs:import namespace='&WXR_NamespaceURI;' schemaLocation='wxr.xsd' />
+
+	<xs:simpleType name='rss_date_time'>
+		<xs:annotation>
+			<xs:documentation>
+				A date-time displayed in RFC-822 format.
+			</xs:documentation>
+			<xs:documentation>
+				Using the regexp definiton of rfc-822 date by Sam Ruby at http://www.intertwingly.net/blog/1360.html
+			</xs:documentation>
+			<xs:documentation>
+				@todo I borrowed this simpleType definition from the generic RSS schema at http://rss2schema.codeplex.com/.
+				I haven't verified that the regex is 100% correct, altho it has correctly matched values in the exports I've
+				test this schema with (and correctly rejected the few 'handcrafted' badly formatted dates I've tried).
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base='xs:string'>
+			<xs:pattern value='(((Mon)|(Tue)|(Wed)|(Thu)|(Fri)|(Sat)|(Sun)), *)?\d\d? +((Jan)|(Feb)|(Mar)|(Apr)|(May)|(Jun)|(Jul)|(Aug)|(Sep)|(Oct)|(Nov)|(Dec)) +\d\d(\d\d)? +\d\d:\d\d(:\d\d)? +(([+\-]?\d\d\d\d)|(UT)|(GMT)|(EST)|(EDT)|(CST)|(CDT)|(MST)|(MDT)|(PST)|(PDT)|\w)' />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name='rss_open_base' mixed='true'>
+		<xs:annotation>
+			<xs:documentation>
+				This type is used for most of the elements defined in the RSS spec that are used in WXR.
+				It's purpose is to follow RSS's rule that elements and attributes in any non-empty namespace may appear
+				anywhere within an RSS document.
+			</xs:documentation>
+			<xs:documentation>
+				@todo there are a few RSS elements defined within this schema that do NOT use this type because
+				of limitations in the expressivity of XML Schema 1.1.  For example, the value of <link/> is supposed to
+				be a URI, hence it is typed as xs:anyURI for documentation purposes.  Unfortunately, XML Schema 1.1 does not
+				allow 'typing' of the character values in mixed content, so we can't a restriction of this type
+				that would restrict the character value of <link/> to be a URL.  However, this means that
+				in instances validated against this schema <link/> cannot have namespace qualified children...which
+				makes this schema more restrictive than the RSS spec.  WP's exporter has never output such namespace
+				qualified children...but we should consider whether to type ALL RSS elements with this type
+				and loose the 'documentation' benefit of typing them as xs:anyURI, etc.
+				
+				For related reasons of limitations of XML Schema 1.1, <rss/> and <channel/> can't use this as a
+				base type either.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:openContent>
+			<xs:any namespace='##other' processContents='lax'>
+				<xs:annotation>
+					<xs:documentation>
+						@processContents='lax' means that during validation	such elements will be checked for
+						validtity IFF there is a declaration for them in scope,	otherwise they will be skipped during validation.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:any>
+		</xs:openContent>
+		<xs:anyAttribute namespace='##other' processContents='lax'>
+			<xs:annotation>
+				<xs:documentation>
+					@processContents='lax' means that during validation	such elements will be checked for
+					validtity IFF there is a declaration for them in scope,	otherwise they will be skipped during validation.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:anyAttribute>
+	</xs:complexType>
+	
+	<xs:element name='rss'>
+		<xs:annotation>
+			<xs:documentation>
+				The root of the RSS feed representing a WXR export.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:openContent>
+				<xs:any namespace='##other' processContents='lax'>
+					<xs:annotation>
+						<xs:documentation>
+							Follow RSS's rule that any element in a non-empty namespace may appear
+							a child.  @processContents='lax' means that during validation
+							such elements will be checked for validtity IFF there is a
+							declaration for them in scope, otherwise they will be skipped during validation.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:any>
+			</xs:openContent>
+			<xs:all>
+				<xs:element name='channel'>
+					<xs:annotation>
+						<xs:documentation>
+							The single channel of the RSS feed.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:openContent>
+							<xs:any namespace='##other' processContents='lax'>
+								<xs:annotation>
+									<xs:documentation>
+										Follow RSS's rule that any element in a non-empty namespace may appear
+										a child.  @processContents='lax' means that during validation
+										such elements will be checked for validtity IFF there is a
+										declaration for them in scope, otherwise they will be skipped during validation.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:any>
+						</xs:openContent>
+						<xs:all>
+							<xs:annotation>
+								<xs:documentation>
+									In conformance with the RSS 2.0 spec, this model group is an <xs:all/>.
+									However, to allow for importers that are written to use a 'true' streaming
+									parser (that is, those that don't need to parse the entire WXR document
+									before they can start inserting data into the DB), the WXR elements declared
+									in the <wp:channel_elements/> model group MUST occur BEFORE any <item/>
+									elements.
+									
+									Unfortunately, due to limitations in the expressivity of XML Schema 1.1,
+									it is not possible to specify that constraint in this schema.
+								</xs:documentation>
+							</xs:annotation>
+							<xs:group ref='rss_channel_elements' />
+							<xs:group ref='wp:channel_elements' />
+							<xs:element name='item' minOccurs='0' maxOccurs='unbounded'>
+								<xs:annotation>
+									<xs:documentation>
+										While in one sense this element should be included within the
+										'rss_channel_elements' model group (since it is an element
+										defined in the RSS spec), it is included at this level for
+										documentation purposes, to stress that in WXR documents
+										that are to be processed by 'true' streaming importers it
+										must occur AFTER the elements in the 'wp:channel_elements'
+										model group.
+									</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:openContent>
+										<xs:any namespace='##other' processContents='lax'>
+											<xs:annotation>
+												<xs:documentation>
+													Follow RSS's rule that any element in a non-empty namespace may appear
+													a child.  @processContents='lax' means that during validation
+													such elements will be checked for validtity IFF there is a
+													declaration for them in scope, otherwise they will be skipped during validation.
+												</xs:documentation>
+											</xs:annotation>
+										</xs:any>
+									</xs:openContent>
+									<xs:all>
+										<xs:group ref='rss_item_elements' />
+										<xs:element ref='content:encoded' />
+										<xs:group ref='wp:post_elements' />
+									</xs:all>
+									<xs:anyAttribute namespace='##other' processContents='lax'>
+										<xs:annotation>
+											<xs:documentation>
+												@processContents='lax' means that during validation	such elements will be checked for
+												validtity IFF there is a declaration for them in scope,	otherwise they will be skipped during validation.
+											</xs:documentation>
+										</xs:annotation>
+									</xs:anyAttribute>
+								</xs:complexType>
+							</xs:element>
+						</xs:all>
+						<xs:anyAttribute namespace='##other' processContents='lax'>
+							<xs:annotation>
+								<xs:documentation>
+									@processContents='lax' means that during validation	such elements will be checked for
+									validtity IFF there is a declaration for them in scope,	otherwise they will be skipped during validation.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:anyAttribute>
+					</xs:complexType>
+				</xs:element>
+			</xs:all>
+			<xs:attribute name='version' type='xs:decimal' use='required' fixed='&RSS_Version;' />
+			<xs:anyAttribute namespace='##other'>
+				<xs:annotation>
+					<xs:documentation>
+						Follow RSS's rule that any attribute in any non-empty namespace may appear
+						on any element defined by the RSS spec.  @processContents='lax' means that during validation
+						such attributes will be checked for validtity IFF there is a
+						declaration for them in scope, otherwise they will be skipped during validation.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:anyAttribute>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:group name='rss_channel_elements'>
+		<xs:annotation>
+			<xs:documentation>
+				This model group consists of elements from the RSS spec at the channel level that
+				are output by the exporter.
+			</xs:documentation>
+			<xs:documentation>
+				@todo open a trac ticket to consider whether to add the standard RSS <docs/> element
+				to this model group, whose value would be a URL that pointed to this schema (or HTML
+				documentation generataed from it).
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name='title' type='rss_open_base'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the name of the channel.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='link' type='xs:anyURI'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the URL of the channel.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='description' type='rss_open_base'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the description of the channel.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='pubDate' type='rss_date_time'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the date/time the export was done.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='language' type='xs:language'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the language used in the channel (i.e., the language used in the site
+						which has been exported).
+					</xs:documentation>
+					<xs:documentation>
+						@todo verify that the lexical space of xs:language is the same as the range of bloginfo_rss( 'language' ).
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='generator' type='rss_open_base' minOccurs='0'>
+				<xs:annotation>
+					<xs:documentation>
+						@todo open a trac ticket to consider uncoupling the output of this element from
+						the 'rss_head' action, and explicitly output it in export.php.
+					</xs:documentation>
+					<xs:documentation>
+						@todo say something about <generator/> being output by the default func hooked to
+						'rss_head', but that plugins might remove that default func and output something else. 
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:all>
+	</xs:group>
+	
+	<xs:group name='rss_item_elements'>
+		<xs:annotation>
+			<xs:documentation>
+				This model group consists of those parts of a single WP_Post for which there is a standard
+				RSS element.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name='title' type='rss_open_base'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the title of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='link' type='xs:anyURI'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the permalink of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='pubDate' type='rss_open_base'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the date/time at which the WP_Post was written.
+					</xs:documentation>
+					<xs:documentation>
+						@todo open a trac ticket to consider whether to depreciate this element
+						since it is ignored by the importer and is optional in RSS, thus it serves no
+						purpose in the export.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element ref='dc:creator'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the user_login of WP_User who is the author of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='guid'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents the GUID of the WP_Post.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base='rss_open_base'>
+							<xs:attribute name='isPermaLink'>
+								<xs:annotation>
+									<xs:documentation>
+										Represents whether the GUID is the permalink for the WP_Post.
+									</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base='xs:boolean'>
+										<xs:pattern value='false'>
+											<xs:annotation>
+												<xs:documentation>
+													The value of this attribute is hardcoded in export.php to 'false'.
+												</xs:documentation>
+											</xs:annotation>
+										</xs:pattern>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name='description' type='rss_open_base'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents a 'synopsis' of the WP_Post.
+					</xs:documentation>
+					<xs:documentation>
+						@todo open a trac ticket to consider whether to deprecate this element for several
+						reasons: 1) the exporter always outputs the empty string for it; 2) it is ignored by the
+						importer; and 3) it is optional in RSS as long as the <title/> element is present (which
+						is always the case).  Hence, it serves no purpose.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name='category' minOccurs='0' maxOccurs='unbounded'>
+				<xs:annotation>
+					<xs:documentation>
+						Represents a single WP_Term associated with the WP_Post.
+					</xs:documentation>
+					<xs:documentation>
+						Note that this element is from the RSS spec (and hence, is in the empty namespace) and
+						is NOT to be confused with <wp:category/>.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base='rss_open_base'>
+							<xs:attribute name='domain' type='xs:string'>
+								<xs:annotation>
+									<xs:documentation>
+										Represents the taxonomy of a WP_Term.  The content of this element is the
+										name of the WP_Term.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name='nicename' type='xs:string'>
+								<xs:annotation>
+									<xs:documentation>
+										Represents the slug of the WP_Term.
+									</xs:documentation>
+									<xs:documentation>
+										@todo open a trac ticket to consider deprecating this attribute in favor
+										of @wp:nicename (or <wp:nicename/>) because this attribute is not
+										defined in the RSS spec (and thus makes for an invalid RSS document)
+										and all extensions to the RSS must be a non-empty namespace.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+	</xs:group>
+</xs:schema>
