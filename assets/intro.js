@@ -92,7 +92,7 @@
 
 			// Tell the modal to show only xml files.
 			library: {
-				type: '',
+				type: 'application/xml',
 				status: 'private',
 			},
 
