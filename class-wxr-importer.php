@@ -1728,8 +1728,12 @@ class WXR_Importer extends WP_Importer {
 
 		$term_id = $result['term_id'];
 
+		// Add the new term to the mapping array.
 		$this->mapping['term'][ $mapping_key ] = $term_id;
 		$this->mapping['term_id'][ $original_id ] = $term_id;
+
+		// Add the new term to the exists array.
+		$this->exists['term'][ $mapping_key ] = $term_id;
 
 		$this->logger->info( sprintf(
 			__( 'Imported "%s" (%s)', 'wordpress-importer' ),
@@ -2256,7 +2260,7 @@ class WXR_Importer extends WP_Importer {
 			return $this->exists['term'][ $exists_key ];
 		}
 
-		// Still nothing, try comment_exists, and cache it
+		// Still nothing, try WP's term_exists, and cache it.
 		$exists = term_exists( $data['slug'], $data['taxonomy'] );
 		if ( is_array( $exists ) ) {
 			$exists = $exists['term_id'];
