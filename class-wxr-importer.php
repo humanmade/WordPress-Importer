@@ -1652,8 +1652,6 @@ class WXR_Importer extends WP_Importer {
 		}
 
 		$original_id = isset( $data['id'] )      ? (int) $data['id']      : 0;
-		$parent_id   = isset( $data['parent'] )  ? (int) $data['parent']  : 0;
-
 		$mapping_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
 		$existing = $this->term_exists( $data );
 		if ( $existing ) {
@@ -1679,14 +1677,24 @@ class WXR_Importer extends WP_Importer {
 		$allowed = array(
 			'slug' => true,
 			'description' => true,
+			'parent' => true,
 		);
 
-		// Map the parent comment, or mark it as one we need to fix
-		// TODO: add parent mapping and remapping
-		/*$requires_remapping = false;
-		if ( $parent_id ) {
-			if ( isset( $this->mapping['term'][ $parent_id ] ) ) {
-				$data['parent'] = $this->mapping['term'][ $parent_id ];
+		/*
+		 * Does this term have a parent?
+		 * Note: $data['parent'] is the slug of the parent term.
+		 */
+		$requires_remapping = false;
+		if ( ! empty( $data['parent'] ) ) {
+			// Map the parent term, or mark it as one we need to fix.
+			$parent_mapping_key = sha1( $data['taxonomy'] . ':' . $data['parent'] );
+
+			// First, look in the mapping array.
+			if ( isset( $this->mapping['term'][ $parent_mapping_key ] ) ) {
+				$data['parent'] = $this->mapping['term'][ $parent_mapping_key ];
+			// Next, see if the term already exists.
+			} else if ( $parent_id = $this->term_exists( array( 'taxonomy' => $data['taxonomy'], 'slug' => $data['parent'] ) ) ) {
+				$data['parent'] = $parent_id;
 			} else {
 				// Prepare for remapping later
 				$meta[] = array( 'key' => '_wxr_import_parent', 'value' => $parent_id );
@@ -1695,7 +1703,7 @@ class WXR_Importer extends WP_Importer {
 				// Wipe the parent for now
 				$data['parent'] = 0;
 			}
-		}*/
+		}
 
 		foreach ( $data as $key => $value ) {
 			if ( ! isset( $allowed[ $key ] ) ) {
