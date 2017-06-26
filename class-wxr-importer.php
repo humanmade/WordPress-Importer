@@ -2319,18 +2319,18 @@ class WXR_Importer extends WP_Importer {
 
 		// Constant-time lookup if we prefilled
 		if ( $this->options['prefill_existing_terms'] ) {
-			return isset( $this->exists['term'][ $exists_key ] ) ? $this->exists['term'][ $exists_key ] : false;
+			return isset( $this->exists['term'][ $exists_key ] ) ? (int) $this->exists['term'][ $exists_key ] : false;
 		}
 
 		// No prefilling, but might have already handled it
 		if ( isset( $this->exists['term'][ $exists_key ] ) ) {
-			return $this->exists['term'][ $exists_key ];
+			return (int) $this->exists['term'][ $exists_key ];
 		}
 
 		// Still nothing, try WP's term_exists, and cache it.
 		$exists = term_exists( $data['slug'], $data['taxonomy'] );
 		if ( is_array( $exists ) ) {
-			$exists = $exists['term_id'];
+			$exists = (int) $exists['term_id'];
 		}
 
 		$this->exists['term'][ $exists_key ] = $exists;
