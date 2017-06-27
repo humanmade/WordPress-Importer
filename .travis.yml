@@ -1,3 +1,6 @@
+dist: trusty
+sudo: false
+
 language: php
 
 matrix:
@@ -32,7 +35,10 @@ before_script:
   - bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 latest
 
   - cd $TRAVIS_BUILD_DIR
-  - npm install -g npm
+  - nvm install 6
+  - nvm use 6
+  - node -v
+  - npm -v
   - npm install -g grunt-cli
   - npm install
 
