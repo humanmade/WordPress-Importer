@@ -26,9 +26,9 @@
 		"composer/installers" : "~1.0"
 	},
 	"require-dev": {
-		"wp-coding-standards/wpcs": "0.6.0",
-		"squizlabs/php_codesniffer": "~2.6",
-		"fig-r/psr2r-sniffer": "dev-master"
+		"wp-coding-standards/wpcs": "dev-master",
+		"squizlabs/php_codesniffer": "~2.9",
+		"fig-r/psr2r-sniffer": "~0.4"
 	},
 	"autoload"          : { },
 	"autoload-dev"      : { },
