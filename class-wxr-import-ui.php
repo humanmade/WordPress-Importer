@@ -230,7 +230,13 @@ class WXR_Import_UI {
 	 * @return bool|WP_Error True on success, error object otherwise.
 	 */
 	protected function handle_upload() {
+		add_filter( 'wp_handle_upload_prefilter', array( $this, 'strip_txt_ext' ) );
+		add_filter( 'wp_handle_upload', array( $this, 'correct_xml_mime_type' ), 10, 2 );
+
 		$file = wp_import_handle_upload();
+
+		remove_filter( 'wp_handle_upload', array( $this, 'correct_xml_mime_type' ) );
+		remove_filter( 'wp_handle_upload_prefilter', array( $this, 'strip_txt_ext' ) );
 
 		if ( isset( $file['error'] ) ) {
 			return new WP_Error( 'wxr_importer.upload.error', esc_html( $file['error'] ), $file );
@@ -280,7 +286,14 @@ class WXR_Import_UI {
 			exit;
 		}
 
+		add_filter( 'wp_handle_upload_prefilter', array( $this, 'strip_txt_ext' ) );
+		add_filter( 'wp_handle_upload', array( $this, 'correct_xml_mime_type' ), 10, 2 );
+
 		$file = wp_import_handle_upload();
+
+		remove_filter( 'wp_handle_upload', array( $this, 'correct_xml_mime_type' ) );
+		remove_filter( 'wp_handle_upload_prefilter', array( $this, 'strip_txt_ext' ) );
+
 		if ( is_wp_error( $file ) ) {
 			echo wp_json_encode( array(
 				'success' => false,
@@ -304,6 +317,54 @@ class WXR_Import_UI {
 		) );
 
 		exit;
+	}
+
+	/**
+	 * Strip the .txt extension added by wp_import_handle_upload()
+	 *
+	 * @param array $file {
+	 *     @type string $name Filename.
+	 *     @type string $type Mime-type.
+	 *     @type string $tmp_name Upload temporary filename.
+	 *     @type int $error ???.
+	 *     @type int $size File size.
+	 * }
+	 * @return array
+	 *
+	 * @todo research the history of WHY wp_import_handle_upload() adds .txt to the
+	 * end of any uploaded files...and consider fixing things there and if there is no
+	 * good reason for doing it, so that we wouldn't have to do it here.
+	 */
+	function strip_txt_ext( $file ) {
+		if ( in_array( $file['type'], array( 'text/xml', 'application/xml') ) ) {
+			$file['name'] = preg_replace( '/\.txt$/', '', $file['name'] );
+		}
+
+		return $file;
+	}
+
+	/**
+	 * Correct the mime type for XML uploads
+	 *
+	 * @param array $upload {
+	 *     @type string $file Attachment filename.
+	 *     @type string $url Attachment URL.
+	 *     @type string $type Attachment Mime-type.
+	 * }
+	 * @param string $context
+	 * @return array
+	 *
+	 * @todo research the history of WHY wp_import_handle_upload() does not allow
+	 * $overrides['test_type']...and consider fixing things there and if there is no
+	 * good reason for doing it, so that we wouldn't have to do it here.
+	 */
+	function correct_xml_mime_type( $upload, $context) {
+		if ( 'upload' === $context ) {
+			$filetype = wp_check_filetype( $upload['file'] );
+			$upload['type'] = $filetype['type'];
+		}
+
+		return $upload;
 	}
 
 	/**
