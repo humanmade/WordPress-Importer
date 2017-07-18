@@ -1652,8 +1652,6 @@ class WXR_Importer extends WP_Importer {
 		}
 
 		$original_id = isset( $data['id'] )      ? (int) $data['id']      : 0;
-		$parent_id   = isset( $data['parent'] )  ? (int) $data['parent']  : 0;
-
 		$mapping_key = sha1( $data['taxonomy'] . ':' . $data['slug'] );
 		$existing = $this->term_exists( $data );
 		if ( $existing ) {
@@ -1679,23 +1677,33 @@ class WXR_Importer extends WP_Importer {
 		$allowed = array(
 			'slug' => true,
 			'description' => true,
+			'parent' => true,
 		);
 
-		// Map the parent comment, or mark it as one we need to fix
-		// TODO: add parent mapping and remapping
-		/*$requires_remapping = false;
-		if ( $parent_id ) {
-			if ( isset( $this->mapping['term'][ $parent_id ] ) ) {
-				$data['parent'] = $this->mapping['term'][ $parent_id ];
+		/*
+		 * Does this term have a parent?
+		 * Note: $data['parent'] is the slug of the parent term.
+		 */
+		$requires_remapping = false;
+		if ( ! empty( $data['parent'] ) ) {
+			// Map the parent term, or mark it as one we need to fix.
+			$parent_mapping_key = sha1( $data['taxonomy'] . ':' . $data['parent'] );
+
+			// First, look in the mapping array.
+			if ( isset( $this->mapping['term'][ $parent_mapping_key ] ) ) {
+				$data['parent'] = $this->mapping['term'][ $parent_mapping_key ];
+			// Next, see if the term already exists.
+			} else if ( $parent_id = $this->term_exists( array( 'taxonomy' => $data['taxonomy'], 'slug' => $data['parent'] ) ) ) {
+				$data['parent'] = $parent_id;
 			} else {
-				// Prepare for remapping later
-				$meta[] = array( 'key' => '_wxr_import_parent', 'value' => $parent_id );
+				// Prepare for remapping later, using the slug.
+				$meta[] = array( 'key' => '_wxr_import_parent', 'value' => $data['parent'] );
 				$requires_remapping = true;
 
 				// Wipe the parent for now
 				$data['parent'] = 0;
 			}
-		}*/
+		}
 
 		foreach ( $data as $key => $value ) {
 			if ( ! isset( $allowed[ $key ] ) ) {
@@ -1728,8 +1736,20 @@ class WXR_Importer extends WP_Importer {
 
 		$term_id = $result['term_id'];
 
+		// Add the new term to the mapping array.
 		$this->mapping['term'][ $mapping_key ] = $term_id;
 		$this->mapping['term_id'][ $original_id ] = $term_id;
+
+		// Add the new term to the exists array.
+		$this->exists['term'][ $mapping_key ] = $term_id;
+
+		// Add the termmeta if necessary.
+		if ( $requires_remapping ) {
+			foreach ( $meta as $insert) {
+				update_term_meta( $term_id, $insert['key'], $insert['value'] );
+			}
+			$this->requires_remapping['term'][ $term_id ] = true;
+		}
 
 		$this->logger->info( sprintf(
 			__( 'Imported "%s" (%s)', 'wordpress-importer' ),
@@ -1828,6 +1848,9 @@ class WXR_Importer extends WP_Importer {
 		}
 		if ( ! empty( $this->requires_remapping['comment'] ) ) {
 			$this->post_process_comments( $this->requires_remapping['comment'] );
+		}
+		if ( ! empty( $this->requires_remapping['term'] ) ) {
+			$this->post_process_terms( $this->requires_remapping['term'] );
 		}
 	}
 
@@ -2030,6 +2053,54 @@ class WXR_Importer extends WP_Importer {
 			// Clear out our temporary meta keys
 			delete_comment_meta( $comment_id, '_wxr_import_parent' );
 			delete_comment_meta( $comment_id, '_wxr_import_user' );
+		}
+	}
+
+	protected function post_process_terms( $todo ) {
+		foreach ( $todo as $term_id => $_ ) {
+			$data = array();
+
+			$parent_term_slug = get_term_meta( $term_id, '_wxr_import_parent', true );
+			if ( ! empty( $parent_term_slug ) ) {
+				$term               = get_term( (int) $term_id );
+				$parent_mapping_key = sha1( $term->taxonomy . ':' . $parent_term_slug );
+
+				// Have we imported the parent now?
+				if ( isset( $this->mapping['term'][ $parent_mapping_key ] ) ) {
+					$data['parent'] = $this->mapping['term'][ $parent_mapping_key ];
+				// Next, see if the term already exists.
+				} else if ( $parent_id = $this->term_exists( array( 'taxonomy' => $term->taxonomy, 'slug' => $parent_term_slug ) ) ) {
+					$data['parent'] = $parent_id;
+				} else {
+					$this->logger->warning( sprintf(
+						__( 'Could not find the parent for term #%d', 'wordpress-importer' ),
+						$term_id
+					) );
+					$this->logger->debug( sprintf(
+						__( 'Term %d was imported with parent %S, but the parent term could not be found', 'wordpress-importer' ),
+						$term_id,
+						$parent_term_slug
+					) );
+				}
+			}
+
+			// Do we have updates to make?
+			if ( empty( $data ) ) {
+				continue;
+			}
+
+			// Run the update
+			$result = wp_update_term( $term_id, $term->taxonomy, $data );
+			if ( empty( $result ) ) {
+				$this->logger->warning( sprintf(
+					__( 'Could not update term #%d with mapped data', 'wordpress-importer' ),
+					$term_id
+				) );
+				continue;
+			}
+
+			// Clear out our temporary meta keys
+			delete_term_meta( $term_id, '_wxr_import_parent' );
 		}
 	}
 
@@ -2248,18 +2319,18 @@ class WXR_Importer extends WP_Importer {
 
 		// Constant-time lookup if we prefilled
 		if ( $this->options['prefill_existing_terms'] ) {
-			return isset( $this->exists['term'][ $exists_key ] ) ? $this->exists['term'][ $exists_key ] : false;
+			return isset( $this->exists['term'][ $exists_key ] ) ? (int) $this->exists['term'][ $exists_key ] : false;
 		}
 
 		// No prefilling, but might have already handled it
 		if ( isset( $this->exists['term'][ $exists_key ] ) ) {
-			return $this->exists['term'][ $exists_key ];
+			return (int) $this->exists['term'][ $exists_key ];
 		}
 
-		// Still nothing, try comment_exists, and cache it
+		// Still nothing, try WP's term_exists, and cache it.
 		$exists = term_exists( $data['slug'], $data['taxonomy'] );
 		if ( is_array( $exists ) ) {
-			$exists = $exists['term_id'];
+			$exists = (int) $exists['term_id'];
 		}
 
 		$this->exists['term'][ $exists_key ] = $exists;
