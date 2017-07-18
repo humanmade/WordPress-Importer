@@ -90,7 +90,7 @@ class WXR_Import_UI {
 	 */
 	public function on_load() {
 		// Skip outputting the header on our import page, so we can handle it.
-		$_GET['noheader'] = true;
+		$_GET['noheader'] = 'true';
 	}
 
 	/**
