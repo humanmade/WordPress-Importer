@@ -1764,6 +1764,23 @@ class WXR_Importer extends WP_Importer {
 		// extract the file name and extension from the url
 		$file_name = basename( $url );
 
+		$upload_dir = wp_upload_dir( $post['upload_date'] );
+		$local_file_path = sprintf( '%s/%s', $upload_dir['path'], $file_name );
+		$local_file_url = sprintf( '%s/%s', $upload_dir['url'], $file_name );
+
+		// Do not re-download the file if it already exists
+		if ( file_exists( $local_file_path ) ) {
+			$local_filetype = wp_check_filetype( $local_file_path );
+
+			// Respond as if wp_upload_bits() did this
+			return array(
+				'file' => $local_file_path,
+				'url' => $local_file_url,
+				'type' => $local_filetype['type'],
+				'error' => false,
+			);
+		}
+
 		// get placeholder file in the upload dir with a unique, sanitized filename
 		$upload = wp_upload_bits( $file_name, 0, '', $post['upload_date'] );
 		if ( $upload['error'] ) {
