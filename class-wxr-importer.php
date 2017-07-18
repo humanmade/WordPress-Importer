@@ -1306,7 +1306,7 @@ class WXR_Importer extends WP_Importer {
 					 */
 					do_action( 'wxr_importer.process_already_imported.comment', $comment );
 
-					$this->mapping['comment'][ $original_id ] = $exists;
+					$this->mapping['comment'][ $original_id ] = $existing;
 					continue;
 				}
 			}
