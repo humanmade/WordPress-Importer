@@ -917,8 +917,13 @@ class WXR_Importer extends WP_Importer {
 				$taxonomy = $term['taxonomy'];
 				$key = sha1( $taxonomy . ':' . $term['slug'] );
 
+				// Add terms that were processed earlier in WXR import.
 				if ( isset( $this->mapping['term'][ $key ] ) ) {
 					$term_ids[ $taxonomy ][] = (int) $this->mapping['term'][ $key ];
+				// Add terms that already exist on the site.
+				} else if ( $existing_term_id = $this->term_exists( $term ) ) {
+					$term_ids[ $taxonomy ][] = $existing_term_id;
+				// Add the term info as post meta for manual relinking.
 				} else {
 					$meta[] = array( 'key' => '_wxr_import_term', 'value' => $term );
 					$requires_remapping = true;
