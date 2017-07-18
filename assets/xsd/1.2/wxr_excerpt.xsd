@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE xs:schema [
+<!--
+  These entity declarations are to ensure the consistency of the use of namespaceURIs in the various
+  @targetNamespace's throughout this schema...and to make it easier to create/maintain schemas for
+  WXR 1.1 and 1.0 (because then I can just copy this schema document, edit the WXR_Version entity
+  decl and remove any element decls that weren't in that previous version).
+  -->
+
+<!ENTITY RSS_Version '2.0'>
+
+<!ENTITY WXR_Version '1.2'>
+<!ENTITY WXR_NamespaceURI 'http://wordpress.org/export/&WXR_Version;/'>
+<!ENTITY WXR_Excerpt_NamespaceURI '&WXR_NamespaceURI;excerpt/'>
+
+<!ENTITY Dublin_Core_Version '1.1'>
+<!ENTITY Dublin_Core_NamespaceURI 'http://purl.org/dc/elements/&Dublin_Core_Version;/'>
+
+<!ENTITY RSS_Content_Module_Version '1.0'>
+<!ENTITY RSS_Content_Module_NamespaceURI 'http://purl.org/rss/&RSS_Content_Module_Version;/modules/content/'>
+]>
+<xs:schema
+		xmlns:xs='http://www.w3.org/2001/XMLSchema'
+		elementFormDefault='qualified'
+		targetNamespace='&WXR_Excerpt_NamespaceURI;'
+		version='&WXR_Version;'>
+	<xs:annotation>
+		<xs:documentation>
+			This XML Schema 1.1 schema describes the "excerpt" namespace in WXR &WXR_Version;. 
+		</xs:documentation>
+		<xs:documentation>
+			@todo open a trac ticket to consider whether to put this element in the main WXR namespace
+			(instead of having in it's own namespace) and renaming it to 'excerpt'.
+		</xs:documentation>
+		<xs:documentation>
+			@todo: add a longer description of why, referencing the ticket that originally added this namespace and
+			a description of how doing so will simplify the importer once it is namespace-aware.
+		</xs:documentation>
+	</xs:annotation>
+
+	<xs:element name='encoded' type='xs:string'>
+		<xs:annotation>
+			<xs:documentation>
+				Represents the post_excerpt of a WP_Post.
+			</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+</xs:schema>

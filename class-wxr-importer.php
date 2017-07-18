@@ -26,14 +26,27 @@ class WXR_Importer extends WP_Importer {
 		)!ix';
 
 	/**
+	 * The base of all WXR namespaceURIs
+	 *
+	 * Note that this is version agnositic
+	 */
+	const WXR_BASE_NAMESPACE_URI = 'http://wordpress.org/export/';
+
+	/**
+	 * The Dublin Core namespaceURI
+	 */
+	const DUBLIN_CORE_NAMESPACE_URI = 'http://purl.org/dc/elements/1.1/';
+
+	/**
+	 * The RSS content module namspaceURI
+	 */
+	const RSS_CONTENT_NAMESPACE_URI = 'http://purl.org/rss/1.0/modules/content/';
+
+	/**
 	 * Version of WXR we're importing.
-	 *
-	 * Defaults to 1.0 for compatibility. Typically overridden by a
-	 * `<wp:wxr_version>` tag at the start of the file.
-	 *
 	 * @var string
 	 */
-	protected $version = '1.0';
+	protected $version;
 
 	// information to import from WXR file
 	protected $categories = array();
@@ -107,6 +120,35 @@ class WXR_Importer extends WP_Importer {
 	}
 
 	/**
+	 * Check whether a namespaceURI is one that has been used for WXR
+	 *
+	 * @param string $namespaceURI The namespaceURI to check.
+	 * @param bool $accept_excerpt_ns Whether to accept the WXR 'excerpt' namespaceURIs.
+	 * @return bool
+	 *
+	 * @todo pvb: as of now, this is a barebones check just to get simple namespace-aware
+	 * parsing in place.  Because of the open questions around detecting WXR version
+	 * in a namespace-aware parsing I didn't feel it worth doing anything more detailed
+	 * at this point.  Ultimately, I think the WXR namespaceURI policy should be changed:
+	 * it should not contain the version # (i.e., it should just be http://wordpress.org/export,
+	 * regardless of the version of WXR).  If that change in policy ever gets accepted,
+	 * this regex could easily be changed to accomodate that.
+	 */
+	protected function is_wxr_namespaceURI( $namespaceURI, $accept_excerpt_ns = false ) {
+		$regex = '#^' . self::WXR_BASE_NAMESPACE_URI . '\d+\.\d+/';
+
+		if ( ! preg_match( "{$regex}#", $namespaceURI ) ) {
+			return false;
+		}
+
+		if ( ! $accept_excerpt_ns && preg_match( "{$regex}excerpt/$#", $namespaceURI ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Get a stream reader for the file.
 	 *
 	 * @param string $file Path to the XML file.
@@ -145,171 +187,124 @@ class WXR_Importer extends WP_Importer {
 			return $reader;
 		}
 
-		// Set the version to compatibility mode first
-		$this->version = '1.0';
-
 		// Start parsing!
 		$data = new WXR_Import_Info();
+
 		while ( $reader->read() ) {
 			// Only deal with element opens
 			if ( $reader->nodeType !== XMLReader::ELEMENT ) {
 				continue;
 			}
 
-			switch ( $reader->name ) {
-				case 'wp:wxr_version':
-					// Upgrade to the correct version
-					$this->version = $reader->readString();
+			// note: possible bug in XMLReader: empty( $reader->namespaceURI ) always returns false
+			// so we have to explicitly compare against the empty string
+			if ( '' === $reader->namespaceURI ) {
+				// handle elements in the empty namespace, i.e., standard RSS elements
+				switch ( $reader->localName ) {
+					case 'item':
+						$node = $reader->expand();
+						$parsed = $this->parse_post_node( $node );
+						if ( is_wp_error( $parsed ) ) {
+							$this->log_error( $parsed );
 
-					if ( version_compare( $this->version, self::MAX_WXR_VERSION, '>' ) ) {
-						$this->logger->warning( sprintf(
-							__( 'This WXR file (version %s) is newer than the importer (version %s) and may not be supported. Please consider updating.', 'wordpress-importer' ),
-							$this->version,
-							self::MAX_WXR_VERSION
-						) );
-					}
+							// Skip the rest of this post
+							$reader->next();
+							break;
+						}
 
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
+						if ( $parsed['data']['post_type'] === 'attachment' ) {
+							$data->media_count++;
+						} else {
+							$data->post_count++;
+						}
+						$data->comment_count += count( $parsed['comments'] );
 
-				case 'generator':
-					$data->generator = $reader->readString();
-					$reader->next();
-					break;
-
-				case 'title':
-					$data->title = $reader->readString();
-					$reader->next();
-					break;
-
-				case 'wp:base_site_url':
-					$data->siteurl = $reader->readString();
-					$reader->next();
-					break;
-
-				case 'wp:base_blog_url':
-					$data->home = $reader->readString();
-					$reader->next();
-					break;
-
-				case 'wp:author':
-					$node = $reader->expand();
-
-					$parsed = $this->parse_author_node( $node );
-					if ( is_wp_error( $parsed ) ) {
-						$this->log_error( $parsed );
-
-						// Skip the rest of this post
+						// Handled everything in this node, move on to the next
 						$reader->next();
 						break;
-					}
 
-					$data->users[] = $parsed;
-
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
-
-				case 'item':
-					$node = $reader->expand();
-					$parsed = $this->parse_post_node( $node );
-					if ( is_wp_error( $parsed ) ) {
-						$this->log_error( $parsed );
-
-						// Skip the rest of this post
+					case 'generator':
+						$data->generator = $reader->readString();
 						$reader->next();
 						break;
-					}
 
-					if ( $parsed['data']['post_type'] === 'attachment' ) {
-						$data->media_count++;
-					} else {
-						$data->post_count++;
-					}
-					$data->comment_count += count( $parsed['comments'] );
-
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
-
-				case 'wp:category':
-				case 'wp:tag':
-				case 'wp:term':
-					$data->term_count++;
-
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
+					case 'title':
+						$data->title = $reader->readString();
+						$reader->next();
+						break;
+				}
 			}
+			elseif ( $this->is_wxr_namespaceURI( $reader->namespaceURI ) ) {
+				if ( empty( $this->version ) ) {
+					switch ( $reader->localName ) {
+						case 'wxr_version':
+							// Upgrade to the correct version
+							$this->version = $reader->readString();
+
+							if ( version_compare( $this->version, self::MAX_WXR_VERSION, '>' ) ) {
+								$this->logger->warning( sprintf(
+									__( 'This WXR file (version %s) is newer than the importer (version %s) and may not be supported. Please consider updating.', 'wordpress-importer' ),
+									$this->version,
+									self::MAX_WXR_VERSION
+								) );
+							}
+
+							// Handled everything in this node, move on to the next
+							$reader->next();
+							break;
+					}
+				}
+				else {
+					switch ( $reader->localName ) {
+						case 'base_site_url':
+							$data->siteurl = $reader->readString();
+							$reader->next();
+							break;
+
+						case 'base_blog_url':
+							$data->home = $reader->readString();
+							$reader->next();
+							break;
+
+						case 'author':
+							$node = $reader->expand();
+
+							$parsed = $this->parse_author_node( $node );
+							if ( is_wp_error( $parsed ) ) {
+								$this->log_error( $parsed );
+
+								// Skip the rest of this post
+								$reader->next();
+								break;
+							}
+
+							$data->users[] = $parsed;
+
+							// Handled everything in this node, move on to the next
+							$reader->next();
+							break;
+
+						case 'category':
+						case 'tag':
+						case 'term':
+							$data->term_count++;
+
+							// Handled everything in this node, move on to the next
+							$reader->next();
+							break;
+					}
+				}
+			}
+		}
+
+		if ( empty( $this->version ) ) {
+			return new WP_Error( 'wxr_importer.unknown_version',
+				__( 'This does not appear to be a WXR file, missing/invalid WXR version number.', 'wordpress-importer' ) );
 		}
 
 		$data->version = $this->version;
 
 		return $data;
-	}
-
-	/**
-	 * The main controller for the actual import stage.
-	 *
-	 * @param string $file Path to the WXR file for importing
-	 */
-	public function parse_authors( $file ) {
-		// Let's run the actual importer now, woot
-		$reader = $this->get_reader( $file );
-		if ( is_wp_error( $reader ) ) {
-			return $reader;
-		}
-
-		// Set the version to compatibility mode first
-		$this->version = '1.0';
-
-		// Start parsing!
-		$authors = array();
-		while ( $reader->read() ) {
-			// Only deal with element opens
-			if ( $reader->nodeType !== XMLReader::ELEMENT ) {
-				continue;
-			}
-
-			switch ( $reader->name ) {
-				case 'wp:wxr_version':
-					// Upgrade to the correct version
-					$this->version = $reader->readString();
-
-					if ( version_compare( $this->version, self::MAX_WXR_VERSION, '>' ) ) {
-						$this->logger->warning( sprintf(
-							__( 'This WXR file (version %s) is newer than the importer (version %s) and may not be supported. Please consider updating.', 'wordpress-importer' ),
-							$this->version,
-							self::MAX_WXR_VERSION
-						) );
-					}
-
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
-
-				case 'wp:author':
-					$node = $reader->expand();
-
-					$parsed = $this->parse_author_node( $node );
-					if ( is_wp_error( $parsed ) ) {
-						$this->log_error( $parsed );
-
-						// Skip the rest of this post
-						$reader->next();
-						break;
-					}
-
-					$authors[] = $parsed;
-
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
-			}
-		}
-
-		return $authors;
 	}
 
 	/**
@@ -332,9 +327,6 @@ class WXR_Importer extends WP_Importer {
 			return $reader;
 		}
 
-		// Set the version to compatibility mode first
-		$this->version = '1.0';
-
 		// Reset other variables
 		$this->base_url = '';
 
@@ -345,125 +337,141 @@ class WXR_Importer extends WP_Importer {
 				continue;
 			}
 
-			switch ( $reader->name ) {
-				case 'wp:wxr_version':
-					// Upgrade to the correct version
-					$this->version = $reader->readString();
+			// note: possible bug in XMLReader: empty( $reader->namespaceURI ) always returns false
+			// so we have to explicitly compare against the empty string
+			if ( '' ===  $reader->namespaceURI && ! empty( $this->version ) ) {
+				// handle elements in the empty namespace, i.e., standard RSS elements
+				switch ( $reader->localName ) {
+					case 'item':
+						$node = $reader->expand();
+						$parsed = $this->parse_post_node( $node );
+						if ( is_wp_error( $parsed ) ) {
+							$this->log_error( $parsed );
 
-					if ( version_compare( $this->version, self::MAX_WXR_VERSION, '>' ) ) {
-						$this->logger->warning( sprintf(
-							__( 'This WXR file (version %s) is newer than the importer (version %s) and may not be supported. Please consider updating.', 'wordpress-importer' ),
-							$this->version,
-							self::MAX_WXR_VERSION
-						) );
-					}
+							// Skip the rest of this post
+							$reader->next();
+							break;
+						}
 
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
+						$this->process_post( $parsed['data'], $parsed['meta'], $parsed['comments'], $parsed['terms'] );
 
-				case 'wp:base_site_url':
-					$this->base_url = $reader->readString();
-
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
-
-				case 'item':
-					$node = $reader->expand();
-					$parsed = $this->parse_post_node( $node );
-					if ( is_wp_error( $parsed ) ) {
-						$this->log_error( $parsed );
-
-						// Skip the rest of this post
+						// Handled everything in this node, move on to the next
 						$reader->next();
 						break;
-					}
 
-					$this->process_post( $parsed['data'], $parsed['meta'], $parsed['comments'], $parsed['terms'] );
+					default:
+						// Skip this node, probably handled by something already
+						break;
+				}
+			}
+			elseif ( $this->is_wxr_namespaceURI( $reader->namespaceURI ) ) {
+				if ( 'wxr_version' !== $reader->localName && empty( $this->version ) ) {
+					continue;
+				}
 
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
+				switch ( $reader->localName ) {
+					case 'wxr_version':
+						// Upgrade to the correct version
+						$this->version = $reader->readString();
 
-				case 'wp:author':
-					$node = $reader->expand();
+						if ( version_compare( $this->version, self::MAX_WXR_VERSION, '>' ) ) {
+							$this->logger->warning( sprintf(
+								__( 'This WXR file (version %s) is newer than the importer (version %s) and may not be supported. Please consider updating.', 'wordpress-importer' ),
+								$this->version,
+								self::MAX_WXR_VERSION
+							) );
+						}
 
-					$parsed = $this->parse_author_node( $node );
-					if ( is_wp_error( $parsed ) ) {
-						$this->log_error( $parsed );
-
-						// Skip the rest of this post
+						// Handled everything in this node, move on to the next
 						$reader->next();
 						break;
-					}
 
-					$status = $this->process_author( $parsed['data'], $parsed['meta'] );
-					if ( is_wp_error( $status ) ) {
-						$this->log_error( $status );
-					}
+					case 'base_site_url':
+						$this->base_url = $reader->readString();
 
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
-
-				case 'wp:category':
-					$node = $reader->expand();
-
-					$parsed = $this->parse_term_node( $node, 'category' );
-					if ( is_wp_error( $parsed ) ) {
-						$this->log_error( $parsed );
-
-						// Skip the rest of this post
+						// Handled everything in this node, move on to the next
 						$reader->next();
 						break;
-					}
 
-					$status = $this->process_term( $parsed['data'], $parsed['meta'] );
+					case 'author':
+						$node = $reader->expand();
 
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
+						$parsed = $this->parse_author_node( $node );
+						if ( is_wp_error( $parsed ) ) {
+							$this->log_error( $parsed );
 
-				case 'wp:tag':
-					$node = $reader->expand();
+							// Skip the rest of this post
+							$reader->next();
+							break;
+						}
 
-					$parsed = $this->parse_term_node( $node, 'tag' );
-					if ( is_wp_error( $parsed ) ) {
-						$this->log_error( $parsed );
+						$status = $this->process_author( $parsed['data'], $parsed['meta'] );
+						if ( is_wp_error( $status ) ) {
+							$this->log_error( $status );
+						}
 
-						// Skip the rest of this post
+						// Handled everything in this node, move on to the next
 						$reader->next();
 						break;
-					}
 
-					$status = $this->process_term( $parsed['data'], $parsed['meta'] );
+					case 'category':
+						$node = $reader->expand();
 
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
+						$parsed = $this->parse_term_node( $node, 'category' );
+						if ( is_wp_error( $parsed ) ) {
+							$this->log_error( $parsed );
 
-				case 'wp:term':
-					$node = $reader->expand();
+							// Skip the rest of this post
+							$reader->next();
+							break;
+						}
 
-					$parsed = $this->parse_term_node( $node );
-					if ( is_wp_error( $parsed ) ) {
-						$this->log_error( $parsed );
+						$status = $this->process_term( $parsed['data'], $parsed['meta'] );
 
-						// Skip the rest of this post
+						// Handled everything in this node, move on to the next
 						$reader->next();
 						break;
-					}
 
-					$status = $this->process_term( $parsed['data'], $parsed['meta'] );
+					case 'tag':
+						$node = $reader->expand();
 
-					// Handled everything in this node, move on to the next
-					$reader->next();
-					break;
+						$parsed = $this->parse_term_node( $node, 'tag' );
+						if ( is_wp_error( $parsed ) ) {
+							$this->log_error( $parsed );
 
-				default:
-					// Skip this node, probably handled by something already
-					break;
+							// Skip the rest of this post
+							$reader->next();
+							break;
+						}
+
+						$status = $this->process_term( $parsed['data'], $parsed['meta'] );
+
+						// Handled everything in this node, move on to the next
+						$reader->next();
+						break;
+
+					case 'term':
+						$node = $reader->expand();
+
+						$parsed = $this->parse_term_node( $node );
+						if ( is_wp_error( $parsed ) ) {
+							$this->log_error( $parsed );
+
+							// Skip the rest of this post
+							$reader->next();
+							break;
+						}
+
+						$status = $this->process_term( $parsed['data'], $parsed['meta'] );
+
+						// Handled everything in this node, move on to the next
+						$reader->next();
+						break;
+
+					default:
+						// Skip this node, probably handled by something already
+						break;
+				}
 			}
 		}
 
@@ -606,108 +614,135 @@ class WXR_Importer extends WP_Importer {
 				continue;
 			}
 
-			switch ( $child->tagName ) {
-				case 'wp:post_type':
-					$data['post_type'] = $child->textContent;
-					break;
+			// note: in the DOM the empty namespace is represented as null,
+			// unlike in XMLReader, which represents it as '', so the tests below
+			// to find standard RSS elements are different than those in get_preliminary_information()
+			// and import()
 
-				case 'title':
-					$data['post_title'] = $child->textContent;
-					break;
+			// skip element if it's namespaceURI is not one we care about
+			if ( ! ( is_null( $child->namespaceURI ) || $this->is_wxr_namespaceURI( $child->namespaceURI, true ) ||
+					in_array( $child->namespaceURI,
+						array( self::DUBLIN_CORE_NAMESPACE_URI, self::RSS_CONTENT_NAMESPACE_URI ) ) ) ) {
+				continue;
+			}
 
-				case 'guid':
-					$data['guid'] = $child->textContent;
-					break;
+			if ( $this->is_wxr_namespaceURI( $child->namespaceURI ) ) {
+				switch ( $child->localName ) {
+					case 'post_type':
+						$data['post_type'] = $child->textContent;
+						break;
 
-				case 'dc:creator':
-					$data['post_author'] = $child->textContent;
-					break;
+					case 'post_id':
+						$data['post_id'] = $child->textContent;
+						break;
 
-				case 'content:encoded':
-					$data['post_content'] = $child->textContent;
-					break;
+					case 'post_date':
+						$data['post_date'] = $child->textContent;
+						break;
 
-				case 'excerpt:encoded':
-					$data['post_excerpt'] = $child->textContent;
-					break;
+					case 'post_date_gmt':
+						$data['post_date_gmt'] = $child->textContent;
+						break;
 
-				case 'wp:post_id':
-					$data['post_id'] = $child->textContent;
-					break;
+					case 'comment_status':
+						$data['comment_status'] = $child->textContent;
+						break;
 
-				case 'wp:post_date':
-					$data['post_date'] = $child->textContent;
-					break;
+					case 'ping_status':
+						$data['ping_status'] = $child->textContent;
+						break;
 
-				case 'wp:post_date_gmt':
-					$data['post_date_gmt'] = $child->textContent;
-					break;
+					case 'post_name':
+						$data['post_name'] = $child->textContent;
+						break;
 
-				case 'wp:comment_status':
-					$data['comment_status'] = $child->textContent;
-					break;
+					case 'status':
+						$data['post_status'] = $child->textContent;
 
-				case 'wp:ping_status':
-					$data['ping_status'] = $child->textContent;
-					break;
+						if ( $data['post_status'] === 'auto-draft' ) {
+							// Bail now
+							return new WP_Error(
+								'wxr_importer.post.cannot_import_draft',
+								__( 'Cannot import auto-draft posts' ),
+								$data
+							);
+						}
+						break;
 
-				case 'wp:post_name':
-					$data['post_name'] = $child->textContent;
-					break;
+					case 'post_parent':
+						$data['post_parent'] = $child->textContent;
+						break;
 
-				case 'wp:status':
-					$data['post_status'] = $child->textContent;
+					case 'menu_order':
+						$data['menu_order'] = $child->textContent;
+						break;
 
-					if ( $data['post_status'] === 'auto-draft' ) {
-						// Bail now
-						return new WP_Error(
-							'wxr_importer.post.cannot_import_draft',
-							__( 'Cannot import auto-draft posts' ),
-							$data
-						);
-					}
-					break;
+					case 'post_password':
+						$data['post_password'] = $child->textContent;
+						break;
 
-				case 'wp:post_parent':
-					$data['post_parent'] = $child->textContent;
-					break;
+					case 'is_sticky':
+						$data['is_sticky'] = $child->textContent;
+						break;
 
-				case 'wp:menu_order':
-					$data['menu_order'] = $child->textContent;
-					break;
+					case 'attachment_url':
+						$data['attachment_url'] = $child->textContent;
+						break;
 
-				case 'wp:post_password':
-					$data['post_password'] = $child->textContent;
-					break;
+					case 'postmeta':
+						$meta_item = $this->parse_meta_node( $child );
+						if ( ! empty( $meta_item ) ) {
+							$meta[] = $meta_item;
+						}
+						break;
 
-				case 'wp:is_sticky':
-					$data['is_sticky'] = $child->textContent;
-					break;
+					case 'comment':
+						$comment_item = $this->parse_comment_node( $child );
+						if ( ! empty( $comment_item ) ) {
+							$comments[] = $comment_item;
+						}
+						break;
+				}
+			}
+			elseif ( $this->is_wxr_namespaceURI( $child->namespaceURI, true ) ) {
+				switch ( $child->localName ) {
+					case 'encoded':
+						$data['post_excerpt'] = $child->textContent;
+						break;
+				}
+			}
+			elseif ( self::DUBLIN_CORE_NAMESPACE_URI === $child->namespaceURI ) {
+				switch ( $child->localName ) {
+					case 'creator':
+						$data['post_author'] = $child->textContent;
+						break;
+				}
+			}
+			elseif ( self::RSS_CONTENT_NAMESPACE_URI === $child->namespaceURI ) {
+				switch ( $child->localName ) {
+					case 'encoded':
+						$data['post_content'] = $child->textContent;
+						break;
+				}
+			}
+			else {
+				// handle elements in the empty namespace, i.e., standard RSS elements
+				switch ( $child->localName ) {
+					case 'title':
+						$data['post_title'] = $child->textContent;
+						break;
 
-				case 'wp:attachment_url':
-					$data['attachment_url'] = $child->textContent;
-					break;
+					case 'guid':
+						$data['guid'] = $child->textContent;
+						break;
 
-				case 'wp:postmeta':
-					$meta_item = $this->parse_meta_node( $child );
-					if ( ! empty( $meta_item ) ) {
-						$meta[] = $meta_item;
-					}
-					break;
-
-				case 'wp:comment':
-					$comment_item = $this->parse_comment_node( $child );
-					if ( ! empty( $comment_item ) ) {
-						$comments[] = $comment_item;
-					}
-					break;
-
-				case 'category':
-					$term_item = $this->parse_category_node( $child );
-					if ( ! empty( $term_item ) ) {
-						$terms[] = $term_item;
-					}
-					break;
+					case 'category':
+						$term_item = $this->parse_category_node( $child );
+						if ( ! empty( $term_item ) ) {
+							$terms[] = $term_item;
+						}
+						break;
+				}
 			}
 		}
 
@@ -1105,12 +1140,16 @@ class WXR_Importer extends WP_Importer {
 				continue;
 			}
 
-			switch ( $child->tagName ) {
-				case 'wp:meta_key':
+			if ( ! $this->is_wxr_namespaceURI( $child->namespaceURI ) ) {
+				continue;
+			}
+
+			switch ( $child->localName ) {
+				case 'meta_key':
 					$key = $child->textContent;
 					break;
 
-				case 'wp:meta_value':
+				case 'meta_value':
 					$value = $child->textContent;
 					break;
 			}
@@ -1197,55 +1236,59 @@ class WXR_Importer extends WP_Importer {
 				continue;
 			}
 
-			switch ( $child->tagName ) {
-				case 'wp:comment_id':
+			if ( ! $this->is_wxr_namespaceURI( $child->namespaceURI ) ) {
+				continue;
+			}
+
+			switch ( $child->localName ) {
+				case 'comment_id':
 					$data['comment_id'] = $child->textContent;
 					break;
-				case 'wp:comment_author':
+				case 'comment_author':
 					$data['comment_author'] = $child->textContent;
 					break;
 
-				case 'wp:comment_author_email':
+				case 'comment_author_email':
 					$data['comment_author_email'] = $child->textContent;
 					break;
 
-				case 'wp:comment_author_IP':
+				case 'comment_author_IP':
 					$data['comment_author_IP'] = $child->textContent;
 					break;
 
-				case 'wp:comment_author_url':
+				case 'comment_author_url':
 					$data['comment_author_url'] = $child->textContent;
 					break;
 
-				case 'wp:comment_user_id':
+				case 'comment_user_id':
 					$data['comment_user_id'] = $child->textContent;
 					break;
 
-				case 'wp:comment_date':
+				case 'comment_date':
 					$data['comment_date'] = $child->textContent;
 					break;
 
-				case 'wp:comment_date_gmt':
+				case 'comment_date_gmt':
 					$data['comment_date_gmt'] = $child->textContent;
 					break;
 
-				case 'wp:comment_content':
+				case 'comment_content':
 					$data['comment_content'] = $child->textContent;
 					break;
 
-				case 'wp:comment_approved':
+				case 'comment_approved':
 					$data['comment_approved'] = $child->textContent;
 					break;
 
-				case 'wp:comment_type':
+				case 'comment_type':
 					$data['comment_type'] = $child->textContent;
 					break;
 
-				case 'wp:comment_parent':
+				case 'comment_parent':
 					$data['comment_parent'] = $child->textContent;
 					break;
 
-				case 'wp:commentmeta':
+				case 'commentmeta':
 					$meta_item = $this->parse_meta_node( $child );
 					if ( ! empty( $meta_item ) ) {
 						$data['commentmeta'][] = $meta_item;
@@ -1388,6 +1431,8 @@ class WXR_Importer extends WP_Importer {
 		return $num_comments;
 	}
 
+	// @todo pvb: suggestion: rename this as parse_rss_category_node()
+	//       to avoid confusion with wp:category nodes
 	protected function parse_category_node( $node ) {
 		$data = array(
 			// Default taxonomy to "category", since this is a `<category>` tag
@@ -1438,34 +1483,39 @@ class WXR_Importer extends WP_Importer {
 	protected function parse_author_node( $node ) {
 		$data = array();
 		$meta = array();
+
 		foreach ( $node->childNodes as $child ) {
 			// We only care about child elements
 			if ( $child->nodeType !== XML_ELEMENT_NODE ) {
 				continue;
 			}
 
-			switch ( $child->tagName ) {
-				case 'wp:author_login':
+			if ( ! $this->is_wxr_namespaceURI( $child->namespaceURI ) ) {
+				continue;
+			}
+
+			switch ( $child->localName ) {
+				case 'author_login':
 					$data['user_login'] = $child->textContent;
 					break;
 
-				case 'wp:author_id':
+				case 'author_id':
 					$data['ID'] = $child->textContent;
 					break;
 
-				case 'wp:author_email':
+				case 'author_email':
 					$data['user_email'] = $child->textContent;
 					break;
 
-				case 'wp:author_display_name':
+				case 'author_display_name':
 					$data['display_name'] = $child->textContent;
 					break;
 
-				case 'wp:author_first_name':
+				case 'author_first_name':
 					$data['first_name'] = $child->textContent;
 					break;
 
-				case 'wp:author_last_name':
+				case 'author_last_name':
 					$data['last_name'] = $child->textContent;
 					break;
 			}
@@ -1583,32 +1633,32 @@ class WXR_Importer extends WP_Importer {
 		$meta = array();
 
 		$tag_name = array(
-			'id'          => 'wp:term_id',
-			'taxonomy'    => 'wp:term_taxonomy',
-			'slug'        => 'wp:term_slug',
-			'parent'      => 'wp:term_parent',
-			'name'        => 'wp:term_name',
-			'description' => 'wp:term_description',
+			'id'          => 'term_id',
+			'taxonomy'    => 'term_taxonomy',
+			'slug'        => 'term_slug',
+			'parent'      => 'term_parent',
+			'name'        => 'term_name',
+			'description' => 'term_description',
 		);
 		$taxonomy = null;
 
 		// Special casing!
 		switch ( $type ) {
 			case 'category':
-				$tag_name['slug']        = 'wp:category_nicename';
-				$tag_name['parent']      = 'wp:category_parent';
-				$tag_name['name']        = 'wp:cat_name';
-				$tag_name['description'] = 'wp:category_description';
+				$tag_name['slug']        = 'category_nicename';
+				$tag_name['parent']      = 'category_parent';
+				$tag_name['name']        = 'cat_name';
+				$tag_name['description'] = 'category_description';
 				$tag_name['taxonomy']    = null;
 
 				$data['taxonomy'] = 'category';
 				break;
 
 			case 'tag':
-				$tag_name['slug']        = 'wp:tag_slug';
+				$tag_name['slug']        = 'tag_slug';
 				$tag_name['parent']      = null;
-				$tag_name['name']        = 'wp:tag_name';
-				$tag_name['description'] = 'wp:tag_description';
+				$tag_name['name']        = 'tag_name';
+				$tag_name['description'] = 'tag_description';
 				$tag_name['taxonomy']    = null;
 
 				$data['taxonomy'] = 'post_tag';
@@ -1621,9 +1671,22 @@ class WXR_Importer extends WP_Importer {
 				continue;
 			}
 
-			$key = array_search( $child->tagName, $tag_name );
-			if ( $key ) {
-				$data[ $key ] = $child->textContent;
+			if ( ! $this->is_wxr_namespaceURI( $child->namespaceURI ) ) {
+				continue;
+			}
+
+			if ( 'termmeta' == $child->localName ) {
+				$meta_item = $this->parse_meta_node( $child );
+				if ( ! empty( $meta_item ) ) {
+					$meta[] = $meta_item;
+				}
+			}
+			else {
+				$key = array_search( $child->localName, $tag_name );
+
+				if ( $key ) {
+					$data[ $key ] = $child->textContent;
+				}
 			}
 		}
 
@@ -1744,6 +1807,8 @@ class WXR_Importer extends WP_Importer {
 
 		do_action( 'wp_import_insert_term', $term_id, $data );
 
+		$this->process_term_meta( $meta, $term_id, $data );
+
 		/**
 		 * Term processing completed.
 		 *
@@ -1751,6 +1816,48 @@ class WXR_Importer extends WP_Importer {
 		 * @param array $data Raw data imported for the term.
 		 */
 		do_action( 'wxr_importer.processed.term', $term_id, $data );
+	}
+
+	/**
+	 * Process and import term meta items.
+	 *
+	 * @param array $meta List of meta data arrays
+	 * @param int $post_id Post to associate with
+	 * @param array $term Term data
+	 * @return int|WP_Error Number of meta items imported on success, error otherwise.
+	 */
+	protected function process_term_meta( $meta, $term_id, $term ) {
+		if ( empty( $meta ) ) {
+			return true;
+		}
+
+		foreach ( $meta as $meta_item ) {
+			/**
+			 * Pre-process post meta data.
+			 *
+			 * @param array $meta_item Meta data. (Return empty to skip.)
+			 * @param int $term_id Term the meta is attached to.
+			 */
+			$meta_item = apply_filters( 'wxr_importer.pre_process.term_meta', $meta_item, $term_id );
+			if ( empty( $meta_item ) ) {
+				return false;
+			}
+
+			$key = apply_filters( 'import_term_meta_key', $meta_item['key'], $term_id, $term );
+			$value = false;
+
+			if ( $key ) {
+				// export gets meta straight from the DB so could have a serialized string
+				if ( ! $value ) {
+					$value = maybe_unserialize( $meta_item['value'] );
+				}
+
+				add_term_meta( $term_id, $key, $value );
+				do_action( 'import_term_meta', $term_id, $key, $value );
+			}
+		}
+
+		return true;
 	}
 
 	/**
