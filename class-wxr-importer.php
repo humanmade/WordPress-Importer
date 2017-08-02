@@ -902,11 +902,13 @@ class WXR_Importer extends WP_Importer {
 			$data['post_title'],
 			$post_type_object->labels->singular_name
 		) );
-		$this->logger->debug( sprintf(
-			__( 'Post %d remapped to %d', 'wordpress-importer' ),
-			$original_id,
-			$post_id
-		) );
+		if ($original_id != $post_id) {
+			$this->logger->debug( sprintf(
+				__( 'Post %d remapped to %d', 'wordpress-importer' ),
+				$original_id,
+				$post_id
+			) );
+		}
 
 		// Handle the terms too
 		$terms = apply_filters( 'wp_import_post_terms', $terms, $post_id, $data );
