@@ -23,6 +23,9 @@ $script_data = array(
 	),
 );
 
+// neither IE10-11 nor Edge understand EventSource, so enqueue a polyfill
+wp_enqueue_script( 'eventsource-polyfill', plugins_url( 'assets/eventsource-polyfill.js', dirname( __FILE__ ) ), array(), '20160909', true );
+
 $url = plugins_url( 'assets/import.js', dirname( __FILE__ ) );
 wp_enqueue_script( 'wxr-importer-import', $url, array( 'jquery' ), '20160909', true );
 wp_localize_script( 'wxr-importer-import', 'wxrImportData', $script_data );
