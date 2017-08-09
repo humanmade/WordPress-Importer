@@ -1,0 +1,110 @@
+#import-log
+{
+	margin-bottom: 1em;
+	margin-top: 1em;
+}
+
+#import-log th.type
+{
+	width: 20%;
+}
+
+#import-log th.sorting_asc::after,
+#import-log th.sorting_desc::after
+{
+    font-family: dashicons;
+    font-size: larger;
+}
+
+#import-log th.sorting_desc::after
+{
+    content: '\f140';
+}
+
+#import-log th.sorting_asc::after
+{
+    content: '\f142';
+}
+
+.dataTables_wrapper
+{
+    clear: both;
+    position: relative;
+}
+
+.dataTables_wrapper::after
+{
+    clear: both;
+    content: '';
+    display: block;
+    height: 0;
+    visibility: hidden;
+}
+
+.dataTables_wrapper .dataTables_length
+{
+    float: left;
+    margin-bottom: 0.75em;
+}
+
+.dataTables_wrapper .dataTables_filter
+{
+    float: right;
+    text-align: right;
+}
+
+.dataTables_wrapper .dataTables_filter input
+{
+    margin-left: 0.5em;
+}
+
+.dataTables_wrapper .dataTables_info
+{
+    clear: both;
+    float: left;
+}
+
+.dataTables_wrapper .dataTables_paginate
+{
+    float: right;
+    text-align: right;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button
+{
+    box-sizing: border-box;
+    color: #555;
+    cursor: pointer;
+	margin: 0 0.5em;
+    min-width: 1.5em;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled
+{
+    cursor: default;
+    opacity: 0.5;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current
+{
+    -webkit-appearance: none;
+    -webkit-border-radius: 3px;
+    -webkit-box-shadow: 0 1px 0 #cccccc;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    background: #f7f7f7;
+    border-color: #ccc;
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 1px;
+    box-shadow: 0 1px 0 #ccc;
+    box-sizing: border-box;
+    color: #555;
+    cursor: pointer;
+    display: inline-block;
+    margin: 0;
+    padding: 0 10px 1px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
