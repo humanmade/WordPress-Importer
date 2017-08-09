@@ -1,0 +1,123 @@
+/*
+ * Style the progress bars according to the user's chosen admin color scheme.
+ *
+ * @link https://core.trac.wordpress.org/ticket/41582
+ */
+progress {
+	-webkit-appearance: none;
+	-moz-appearane: none;
+	appearance: none;
+	background-color: transparent;
+	border: 1px solid #ccc;
+	box-shadow: 0 1px 0px 0 rgba(255, 255, 255, 0.2);
+	box-sizing: content-box;
+	height: 1em;
+}
+
+progress::-webkit-progress-bar {
+	background-color: transparent;
+}
+
+progress::-webkit-progress-value {
+	box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+progress::-moz-progress-bar {
+	box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.admin-color-fresh progress::-moz-progress-bar {
+	background-color: #0073aa;
+}
+
+.admin-color-fresh progress::-webkit-progress-value {
+	background-color: #0073aa;
+}
+
+.admin-color-fresh progress::-ms-fill {
+	background-color: #0073aa;
+}
+
+.admin-color-light progress::-moz-progress-bar {
+	background-color: #888;
+}
+
+.admin-color-light progress::-webkit-progress-value {
+	background-color: #888;
+}
+
+.admin-color-light progress::-ms-fill {
+	background-color: #888;
+}
+
+.admin-color-blue progress::-moz-progress-bar {
+	background-color: #096484;
+}
+
+.admin-color-blue progress::-webkit-progress-value {
+	background-color: #096484;
+}
+
+.admin-color-blue progress::-ms-fill {
+	background-color: #096484;
+}
+
+.admin-color-coffee progress::-moz-progress-bar {
+	background-color: #c7a589;
+}
+
+.admin-color-coffee progress::-webkit-progress-value {
+	background-color: #c7a589;
+}
+
+.admin-color-coffee progress::-ms-fill {
+	background-color: #c7a589;
+}
+
+.admin-color-ectoplasm progress::-moz-progress-bar {
+	background-color: #a3b745;
+}
+
+.admin-color-ectoplasm progress::-webkit-progress-value {
+	background-color: #a3b745;
+}
+
+.admin-color-ectoplasm progress::-ms-fill {
+	background-color: #a3b745;
+}
+
+.admin-color-midnight progress::-moz-progress-bar {
+	background-color: #e14d43;
+}
+
+.admin-color-midnight progress::-webkit-progress-value {
+	background-color: #e14d43;
+}
+
+.admin-color-midnight progress::-ms-fill {
+	background-color: #e14d43;
+}
+
+.admin-color-ocean progress::-moz-progress-bar {
+	background-color: #9ebaa0;
+}
+
+.admin-color-ocean progress::-webkit-progress-value {
+	background-color: #9ebaa0;
+}
+
+.admin-color-ocean progress::-ms-fill {
+	background-color: #9ebaa0;
+}
+
+.admin-color-sunrise progress::-moz-progress-bar {
+	background-color: #dd823b;
+}
+
+.admin-color-sunrise progress::-webkit-progress-value {
+	background-color: #dd823b;
+}
+
+.admin-color-sunrise progress::-ms-fill {
+	background-color: #dd823b;
+}
