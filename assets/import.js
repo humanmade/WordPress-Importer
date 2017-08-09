@@ -45,7 +45,7 @@
 	};
 	wxrImport.data = wxrImportData;
 	wxrImport.render();
-
+    
 	var evtSource = new EventSource( wxrImport.data.url );
 	evtSource.onmessage = function ( message ) {
 		var data = JSON.parse( message.data );
@@ -65,15 +65,72 @@
 	};
 	evtSource.addEventListener( 'log', function ( message ) {
 		var data = JSON.parse( message.data );
-		var row = document.createElement('tr');
-		var level = document.createElement( 'td' );
-		level.appendChild( document.createTextNode( data.level ) );
-		row.appendChild( level );
 
-		var message = document.createElement( 'td' );
-		message.appendChild( document.createTextNode( data.message ) );
-		row.appendChild( message );
-
-		jQuery('#import-log').append( row );
+		// add row to the table, allowing DataTable to keep rows sorted by log-level
+		$( '#import-log' ).dataTable().fnAddData( [data.level, data.message] );
 	});
+
+	// sorting/pagination of log messages, using the DataTables jquery plugin
+	$( '#import-log' ).dataTable( {
+		order: [[ 0, 'desc' ]],
+		columns: [
+			{ type: 'log-level' },
+			{ type: 'string' },
+		],
+		lengthMenu: [[ 10, 20, 40, -1 ], [ 10, 20, 40, 'All' ]],
+		pageLength: 10,
+		pagingType: 'full_numbers',
+	});
+	
+	// extend DataTables to allow sorting by log-level
+	$.extend( jQuery.fn.dataTableExt.oSort, {
+	    'log-level-asc': function( a, b ) {
+	    	return log_level_orderby( a, b );
+	    },
+	    'log-level-desc': function(a,b) {
+	    	return - log_level_orderby( a, b );
+	    }
+	} );
+
+	/**
+	 * Ordering by log-level
+	 * 
+	 * @param a
+	 * @param b
+	 * @returns -1, 0, 1
+	 */
+	function log_level_orderby( a, b ) {
+		switch ( a ) {
+			case 'error':
+				switch ( b ) {
+					case 'error':
+						return 0;
+					default:
+						return 1;
+				}
+			case 'warning':
+				switch ( b ) {
+					case 'error':
+						return -1;
+					case 'warning':
+						return 0;
+					default:
+						return 1;
+				}
+			case 'notice':
+				switch ( b ) {
+					case 'error':
+					case 'warning':
+						return -1;
+					case 'notice':
+						return 0;
+					default:
+						return 1;
+				}
+			case 'info':
+				return -1;
+			default:
+				return 0;
+		}
+	}
 })(jQuery);
