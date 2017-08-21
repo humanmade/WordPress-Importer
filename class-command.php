@@ -33,11 +33,6 @@ class WXR_Import_Command extends WP_CLI_Command {
 			}
 		}
 
-		$path = realpath( $args[0] );
-		if ( ! $path ) {
-			WP_CLI::error( sprintf( 'Specified file %s does not exist', $args[0] ) );
-		}
-
 		$options = array(
 			'fetch_attachments' => true,
 		);
@@ -48,6 +43,12 @@ class WXR_Import_Command extends WP_CLI_Command {
 				WP_CLI::error( 'Invalid default author ID specified.' );
 			}
 		}
+
+		$path = realpath( $args[0] );
+		if ( ! $path ) {
+			$path = in_array( $args[0], array ( 'stdin', '-' ) ) ? 'php://stdin' : $args[0];
+		}
+
 		$importer = new WXR_Importer( $options );
 		$importer->set_logger( $logger );
 		$result = $importer->import( $path );
