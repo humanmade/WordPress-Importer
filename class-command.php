@@ -33,11 +33,6 @@ class WXR_Import_Command extends WP_CLI_Command {
 			}
 		}
 
-		$path = realpath( $args[0] );
-		if ( ! $path ) {
-			WP_CLI::error( sprintf( 'Specified file %s does not exist', $args[0] ) );
-		}
-
 		$options = array(
 			'fetch_attachments' => true,
 		);
@@ -50,7 +45,7 @@ class WXR_Import_Command extends WP_CLI_Command {
 		}
 		$importer = new WXR_Importer( $options );
 		$importer->set_logger( $logger );
-		$result = $importer->import( $path );
+		$result = $importer->import( realpath( $args[0] ) ? : $args[0] );
 		if ( is_wp_error( $result ) ) {
 			WP_CLI::error( $result->get_error_message() );
 		}

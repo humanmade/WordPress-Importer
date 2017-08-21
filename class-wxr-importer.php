@@ -127,7 +127,7 @@ class WXR_Importer extends WP_Importer {
 		}
 
 		if ( ! $status ) {
-			return new WP_Error( 'wxr_importer.cannot_parse', __( 'Could not open the file for parsing', 'wordpress-importer' ) );
+			return new WP_Error( 'wxr_importer.cannot_parse', sprintf( __( 'Could not open the file for parsing', 'wordpress-importer' ), $file ) );
 		}
 
 		return $reader;
@@ -321,15 +321,15 @@ class WXR_Importer extends WP_Importer {
 		add_filter( 'import_post_meta_key', array( $this, 'is_valid_meta_key' ) );
 		add_filter( 'http_request_timeout', array( &$this, 'bump_request_timeout' ) );
 
-		$result = $this->import_start( $file );
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-
 		// Let's run the actual importer now, woot
 		$reader = $this->get_reader( $file );
 		if ( is_wp_error( $reader ) ) {
 			return $reader;
+		}
+
+		$result = $this->import_start( $file );
+		if ( is_wp_error( $result ) ) {
+			return $result;
 		}
 
 		// Set the version to compatibility mode first
