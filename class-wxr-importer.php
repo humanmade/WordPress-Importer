@@ -1094,11 +1094,28 @@ class WXR_Importer extends WP_Importer {
 
 	/**
 	 * Parse a meta node into meta data.
+	 * Either parsed in its long format:
+	 * <wp:postmeta>
+	 *   <wp:meta_key>_thumbnail_id</wp:meta_key>
+	 *   <wp:meta_value><![CDATA[22328]]></wp:meta_value>
+	 * </wp:postmeta>
+	 *
+	 * Either provided in its short form
+	 * <wp:postmeta meta_key="_wp_page_template" meta_value="theme-custom-template.php" />
+	 *
+	 * Short form is only used if the node does NOT have child element
+	 *   and both meta_key and meta_value are set.
 	 *
 	 * @param DOMElement $node Parent node of meta data (typically `wp:postmeta` or `wp:commentmeta`).
 	 * @return array|null Meta data array on success, or null on error.
 	 */
 	protected function parse_meta_node( $node ) {
+		if ( ! $node->hasChildNodes()
+				 && ( $key = $node->getAttribute('meta_key') )
+				 && ( $value = $node->getAttribute('meta_value') ) ) {
+			return compact( 'key', 'value' );
+		}
+
 		foreach ( $node->childNodes as $child ) {
 			// We only care about child elements
 			if ( $child->nodeType !== XML_ELEMENT_NODE ) {
