@@ -1040,9 +1040,12 @@ class WXR_Importer extends WP_Importer {
 			$remote_url = rtrim( $this->base_url, '/' ) . $remote_url;
 		}
 
-		$upload = $this->fetch_remote_file( $remote_url, $post );
-		if ( is_wp_error( $upload ) ) {
-			return $upload;
+		$upload = apply_filters( 'wxr_importer.process_attachment.uploaded', FALSE, $remote_url, $post, $meta);
+		if ( ! $upload )  {
+			$upload = $this->fetch_remote_file( $remote_url, $post );
+			if ( is_wp_error( $upload ) ) {
+				return $upload;
+			}
 		}
 
 		$info = wp_check_filetype( $upload['file'] );
