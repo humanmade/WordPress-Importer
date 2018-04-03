@@ -1023,7 +1023,7 @@ class WXR_Importer extends WP_Importer {
 	protected function process_attachment( $post, $meta, $remote_url ) {
 		// try to use _wp_attached file for upload folder placement to ensure the same location as the export site
 		// e.g. location is 2003/05/image.jpg but the attachment post_date is 2010/09, see media_handle_upload()
-		$post['upload_date'] = $post['post_date'];
+		$post['upload_date'] = date('Y/m', strtotime($post['post_date']));
 		foreach ( $meta as $meta_item ) {
 			if ( $meta_item['key'] !== '_wp_attached_file' ) {
 				continue;
@@ -1040,9 +1040,12 @@ class WXR_Importer extends WP_Importer {
 			$remote_url = rtrim( $this->base_url, '/' ) . $remote_url;
 		}
 
-		$upload = $this->fetch_remote_file( $remote_url, $post );
-		if ( is_wp_error( $upload ) ) {
-			return $upload;
+		$upload = apply_filters( 'wxr_importer.process_attachment.uploaded', FALSE, $remote_url, $post, $meta);
+		if ( ! $upload )  {
+			$upload = $this->fetch_remote_file( $remote_url, $post );
+			if ( is_wp_error( $upload ) ) {
+				return $upload;
+			}
 		}
 
 		$info = wp_check_filetype( $upload['file'] );
