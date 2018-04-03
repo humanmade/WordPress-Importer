@@ -1023,7 +1023,7 @@ class WXR_Importer extends WP_Importer {
 	protected function process_attachment( $post, $meta, $remote_url ) {
 		// try to use _wp_attached file for upload folder placement to ensure the same location as the export site
 		// e.g. location is 2003/05/image.jpg but the attachment post_date is 2010/09, see media_handle_upload()
-		$post['upload_date'] = $post['post_date'];
+		$post['upload_date'] = date('Y/m', strtotime($post['post_date']));
 		foreach ( $meta as $meta_item ) {
 			if ( $meta_item['key'] !== '_wp_attached_file' ) {
 				continue;
