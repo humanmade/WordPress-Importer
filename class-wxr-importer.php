@@ -99,6 +99,7 @@ class WXR_Importer extends WP_Importer {
 			'fetch_attachments'         => false,
 			'aggressive_url_search'     => false,
 			'default_author'            => null,
+			'map_usernames'             => true,
 		) );
 	}
 
@@ -1537,20 +1538,31 @@ class WXR_Importer extends WP_Importer {
 
 		$user_id = wp_insert_user( wp_slash( $userdata ) );
 		if ( is_wp_error( $user_id ) ) {
-			$this->logger->error( sprintf(
-				__( 'Failed to import user "%s"', 'wordpress-importer' ),
-				$userdata['user_login']
-			) );
-			$this->logger->debug( $user_id->get_error_message() );
+			if ( $this->options['map_usernames']
+				 && $user_id->get_error_message() === 'Sorry, that username already exists!'
+				 && ( $match_username = get_user_by( 'login', $userdata['user_login'] ) ) ) {
+				$user_id = $match_username->ID;
+				$this->logger->info( sprintf(
+					__( 'Mapping original uid %d to user id %d since they belong to the same login name "%s"', 'wordpress-importer' ),
+					$original_id, $user_id, $userdata['user_login']
+				) );
+			}
+			else {
+				$this->logger->error( sprintf(
+					__( 'Failed to import user "%s"', 'wordpress-importer' ),
+					$userdata['user_login']
+				) );
+				$this->logger->debug( $user_id->get_error_message() );
 
-			/**
-			 * User processing failed.
-			 *
-			 * @param WP_Error $user_id Error object.
-			 * @param array $userdata Raw data imported for the user.
-			 */
-			do_action( 'wxr_importer.process_failed.user', $user_id, $userdata );
-			return false;
+				/**
+				 * User processing failed.
+				 *
+				 * @param WP_Error $user_id Error object.
+				 * @param array $userdata Raw data imported for the user.
+				 */
+				do_action( 'wxr_importer.process_failed.user', $user_id, $userdata );
+				return false;
+			}
 		}
 
 		if ( $original_id ) {
