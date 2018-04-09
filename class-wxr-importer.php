@@ -740,8 +740,8 @@ class WXR_Importer extends WP_Importer {
 		$parent_id   = isset( $data['post_parent'] ) ? (int) $data['post_parent'] : 0;
 		$author_id   = isset( $data['post_author'] ) ? (int) $data['post_author'] : 0;
 
-		// Have we already processed this?
-		if ( isset( $this->mapping['post'][ $original_id ] ) ) {
+		// is a post id specified and have we already processed it?
+		if ( $original_id && isset( $this->mapping['post'][ $original_id ] ) ) {
 			return;
 		}
 
@@ -891,9 +891,11 @@ class WXR_Importer extends WP_Importer {
 		}
 
 		// map pre-import ID to local ID
-		$this->mapping['post'][ $original_id ] = (int) $post_id;
-		if ( $requires_remapping ) {
-			$this->requires_remapping['post'][ $post_id ] = true;
+		if ( $original_id ) {
+			$this->mapping['post'][ $original_id ] = (int) $post_id;
+			if ( $requires_remapping ) {
+				$this->requires_remapping['post'][ $post_id ] = true;
+			}
 		}
 		$this->mark_post_exists( $data, $post_id );
 
