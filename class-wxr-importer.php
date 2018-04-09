@@ -891,9 +891,11 @@ class WXR_Importer extends WP_Importer {
 		}
 
 		// map pre-import ID to local ID
-		$this->mapping['post'][ $original_id ] = (int) $post_id;
-		if ( $requires_remapping ) {
-			$this->requires_remapping['post'][ $post_id ] = true;
+		if ( $original_id ) {
+			$this->mapping['post'][ $original_id ] = (int) $post_id;
+			if ( $requires_remapping ) {
+				$this->requires_remapping['post'][ $post_id ] = true;
+			}
 		}
 		$this->mark_post_exists( $data, $post_id );
 
