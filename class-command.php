@@ -16,6 +16,24 @@ class WXR_Import_Command extends WP_CLI_Command {
 	 *
 	 * [--default-author=<id>]
 	 * : Default author ID to use if invalid user is found in the import data.
+	 *
+	 * [--prefill=<values>]
+	 * : Prefill posts, comments and/or terms (Default to posts,comments,terms)
+	 *
+	 * [--update-attachment-guids]
+	 * : Update attachment GUID after file has been downloaded.
+	 *
+	 * [--fetch-attachments=<bool>]
+	 * : Actually download attachments or skip this step.
+	 * ---
+	 * default: true
+	 * options:
+	 *   - true
+	 *   - false
+	 *
+	 * [--aggressive-url-search]
+	 * : Should we search/replace for URLs aggressively. If set searches all posts' content for old URLs and replaces. Other only checks for `<img class="wp-image-*">` (default)
+	 *
 	 */
 	public function import( $args, $assoc_args ) {
 		$logger = new WP_Importer_Logger_CLI();
@@ -39,8 +57,28 @@ class WXR_Import_Command extends WP_CLI_Command {
 		}
 
 		$options = array(
-			'fetch_attachments' => true,
+			'prefill_existing_posts' => true,
+			'prefill_existing_comments' => true,
+			'prefill_existing_terms' => true,
+			'update_attachment_guids' => false,
+			'aggressive_url_search' => false,
+			'fetch_attachments' => true
 		);
+		if ( isset( $assoc_args['fetch-attachments'] ) ) {
+			$options['fetch_attachments'] = preg_match('/^(y|yes|1|true)$/i', $assoc_args['fetch-attachments'] );
+		}
+		if ( isset( $assoc_args['update-attachment-guids'] ) ) {
+			$options['update_attachment_guids'] = !empty( $assoc_args['update-attachment-guids'] );
+		}
+		if ( isset( $assoc_args['aggressive-url-search'] ) ) {
+			$options['aggressive_url_search'] = !empty( $assoc_args['aggressive-url-search'] );
+		}
+		if ( isset( $assoc_args['prefill'] ) ) {
+			$options = array_merge( $options,
+									array( 'prefill_existing_posts' => in_array( 'posts', explode(',', $assoc_args['prefill'] ), TRUE ),
+										   'prefill_existing_comments' => in_array( 'comments', explode(',', $assoc_args['prefill'] ), TRUE ),
+										   'prefill_existing_terms' => in_array( 'terms', explode(',', $assoc_args['prefill'] ), TRUE ) ) );
+		}
 		if ( isset( $assoc_args['default-author'] ) ) {
 			$options['default_author'] = absint( $assoc_args['default-author'] );
 
