@@ -780,6 +780,14 @@ class WXR_Importer extends WP_Importer {
 
 		// Map the parent post, or mark it as one we need to fix
 		$requires_remapping = false;
+
+		// A different post already exist for the same ID (since post_exists() already return FALSE above)
+		if ( $original_id && ( get_post( $original_id ) ) ) {
+			$data['post_id'] = 0;
+			$meta[] = array( 'key' => '_wxr_import_original_id', 'value' => $parent_id );
+			$requires_remapping = true;
+		}
+
 		if ( $parent_id ) {
 			if ( isset( $this->mapping['post'][ $parent_id ] ) ) {
 				$data['post_parent'] = $this->mapping['post'][ $parent_id ];
