@@ -1762,7 +1762,7 @@ class WXR_Importer extends WP_Importer {
 	 */
 	protected function fetch_remote_file( $url, $post ) {
 		// extract the file name and extension from the url
-		$file_name = basename( $url );
+		$file_name = basename( urldecode( $url ) );
 
 		// get placeholder file in the upload dir with a unique, sanitized filename
 		$upload = wp_upload_bits( $file_name, 0, '', $post['upload_date'] );
