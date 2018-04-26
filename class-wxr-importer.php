@@ -1059,7 +1059,7 @@ class WXR_Importer extends WP_Importer {
 		}
 
 		// as per wp-admin/includes/upload.php
-		$post_id = wp_insert_attachment( $post, $upload['file'] );
+		$post_id = wp_insert_attachment( $post, $upload['file'], 0, TRUE );
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
 		}
