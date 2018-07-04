@@ -842,6 +842,8 @@ class WXR_Importer extends WP_Importer {
 
 		$postdata = apply_filters( 'wp_import_post_data_processed', $postdata, $data );
 
+		$postdata = wp_slash( $postdata );
+
 		if ( 'attachment' === $postdata['post_type'] ) {
 			if ( ! $this->options['fetch_attachments'] ) {
 				$this->logger->notice( sprintf(
@@ -1144,6 +1146,7 @@ class WXR_Importer extends WP_Importer {
 			 * @param int $post_id Post the meta is attached to.
 			 */
 			$meta_item = apply_filters( 'wxr_importer.pre_process.post_meta', $meta_item, $post_id );
+			$meta_item = wp_slash( $meta_item );
 			if ( empty( $meta_item ) ) {
 				return false;
 			}
