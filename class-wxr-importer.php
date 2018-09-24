@@ -320,6 +320,7 @@ class WXR_Importer extends WP_Importer {
 	public function import( $file ) {
 		add_filter( 'import_post_meta_key', array( $this, 'is_valid_meta_key' ) );
 		add_filter( 'http_request_timeout', array( &$this, 'bump_request_timeout' ) );
+		add_action( 'wxr_importer.process_already_imported.post', array( &$this, 'parent_already_existing_attachments' ), 10, 2 );
 
 		$result = $this->import_start( $file );
 		if ( is_wp_error( $result ) ) {
@@ -715,6 +716,30 @@ class WXR_Importer extends WP_Importer {
 	}
 
 	/**
+	 * Fired by wxr_importer.process_already_imported.post
+	 * Remap post_parent for attachment that already existing
+	 * Without this, existing attachment (having lost their parent because of deletion/re-import (post-parent set to 0)
+	 * would have their processing skipped during subsequent imports and never get their parent-id correctly updated anymore.
+	 *
+	 * This function expand what process_post() does by testing $parent_id + call to process_attachment() and process_post_meta()
+	 */
+	function parent_already_existing_attachments( $data, $post_exists ) {
+		$post_id = $post_exists;
+		$parent_id = isset( $data['post_parent'] ) ? (int) $data['post_parent'] : 0;
+		if ( $parent_id ) {
+			if ( isset( $this->mapping['post'][ $parent_id ] ) ) {
+				wp_update_post( ['ID' => $post_id, 'post_parent' => $this->mapping['post'][ $parent_id ] ] );
+			} else {
+				$post = get_post($post_id);
+				$this->process_post_meta( [ ['key' => '_wxr_import_parent', 'value' => $parent_id ] ], $post_id, $post );
+				wp_update_post( ['ID' => $post_id, 'post_parent' => 0 ] );
+				$this->requires_remapping['post'][ $post_id ] = true;
+			}
+			$this->mark_post_exists( $data, $post_id );
+		}
+	}
+
+	/**
 	 * Create new posts based on import information
 	 *
 	 * Posts marked as having a parent which doesn't exist will become top level items.
@@ -769,8 +794,9 @@ class WXR_Importer extends WP_Importer {
 			 * Post processing already imported.
 			 *
 			 * @param array $data Raw data imported for the post.
+			 * @param int $post_exists Already existing post id
 			 */
-			do_action( 'wxr_importer.process_already_imported.post', $data );
+			do_action( 'wxr_importer.process_already_imported.post', $data, $post_exists );
 
 			// Even though this post already exists, new comments might need importing
 			$this->process_comments( $comments, $original_id, $data, $post_exists );
