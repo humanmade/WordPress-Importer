@@ -1539,7 +1539,7 @@ class WXR_Importer extends WP_Importer {
 		$user_id = wp_insert_user( wp_slash( $userdata ) );
 		if ( is_wp_error( $user_id ) ) {
 			if ( $this->options['map_usernames']
-				 && $user_id->get_error_message() === 'Sorry, that username already exists!'
+				 && $user_id->get_error_code() === 'existing_user_login'
 				 && ( $match_username = get_user_by( 'login', $userdata['user_login'] ) ) ) {
 				$user_id = $match_username->ID;
 				$this->logger->info( sprintf(
