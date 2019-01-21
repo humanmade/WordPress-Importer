@@ -441,7 +441,7 @@ class WXR_Import_UI {
 		}
 
 		// Start the event stream.
-		header( 'Content-Type: text/event-stream' );
+		header( 'Content-Type: text/event-stream, charset=UTF-8' );
 
 		$this->id = wp_unslash( (int) $_REQUEST['id'] );
 		$settings = get_post_meta( $this->id, '_wxr_import_settings', true );
