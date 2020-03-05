@@ -1634,7 +1634,7 @@ class WXR_Importer extends WP_Importer {
 					$value = maybe_unserialize( $meta_item['value'] );
 				}
 
-				add_user_meta( $user_id, $key, $value );
+				add_user_meta( $user_id, wp_slash( $key ), wp_slash( $value ) );
 				do_action( 'import_user_meta', $user_id, $key, $value );
 			}
 		}
