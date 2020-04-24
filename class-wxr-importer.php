@@ -1468,6 +1468,13 @@ class WXR_Importer extends WP_Importer {
 				case 'wp:author_last_name':
 					$data['last_name'] = $child->textContent;
 					break;
+
+				case 'wp:authormeta':
+					$meta_item = $this->parse_meta_node( $child );
+					if ( ! empty( $meta_item ) ) {
+						$meta[] = $meta_item;
+					}
+					break;
 			}
 		}
 
@@ -1568,7 +1575,9 @@ class WXR_Importer extends WP_Importer {
 			$user_id
 		) );
 
-		// TODO: Implement meta handling once WXR includes it
+		// Import user meta.
+		$this->process_author_meta( $meta, $user_id, $userdata );
+
 		/**
 		 * User processing completed.
 		 *
@@ -1576,6 +1585,61 @@ class WXR_Importer extends WP_Importer {
 		 * @param array $userdata Raw data imported for the user.
 		 */
 		do_action( 'wxr_importer.processed.user', $user_id, $userdata );
+	}
+
+	/**
+	 * Process and import user meta items.
+	 *
+	 * @param array $meta     List of meta data arrays
+	 * @param int   $user_id  User to associate with
+	 * @param array $userdata User data
+	 *
+	 * @return int|WP_Error   Number of meta items imported on success, error otherwise.
+	 */
+	protected function process_author_meta( $meta, $user_id, $userdata ) {
+
+		if ( empty( $meta ) ) {
+			return true;
+		}
+
+		foreach ( $meta as $meta_item ) {
+
+			/**
+			 * Pre-process user meta data.
+			 *
+			 * @param array $meta_item Meta data. (Return empty to skip.)
+			 * @param int   $user_id   User the meta is attached to.
+			 */
+			$meta_item = apply_filters( 'wxr_importer.pre_process.user_meta', $meta_item, $user_id );
+
+			if ( empty( $meta_item ) ) {
+				return false;
+			}
+
+			/**
+			 * Pre-process user meta import key.
+			 *
+			 * @param string $meta_item['key'] Meta key.
+			 * @param int    $user_id          User the meta is attached to.
+			 * @param array  $userdata         User data.
+			 */
+			$key = apply_filters( 'import_user_meta_key', $meta_item['key'], $user_id, $userdata );
+
+			$value = false;
+
+			if ( $key ) {
+
+				// Export gets meta straight from the DB so could have a serialized string.
+				if ( ! $value ) {
+					$value = maybe_unserialize( $meta_item['value'] );
+				}
+
+				update_user_meta( $user_id, wp_slash( $key ), wp_slash( $value ) );
+				do_action( 'import_user_meta', $user_id, $key, $value );
+			}
+		}
+
+		return true;
 	}
 
 	protected function parse_term_node( $node, $type = 'term' ) {
