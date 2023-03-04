@@ -860,7 +860,7 @@ class WXR_Importer extends WP_Importer {
 			$remote_url = ! empty( $data['attachment_url'] ) ? $data['attachment_url'] : $data['guid'];
 			$post_id = $this->process_attachment( $postdata, $meta, $remote_url );
 		} else {
-			$post_id = wp_insert_post( $postdata, true );
+			$post_id = wp_insert_post( wp_slash( $postdata ), true );
 			do_action( 'wp_import_insert_post', $post_id, $original_id, $postdata, $data );
 		}
 
@@ -1167,7 +1167,7 @@ class WXR_Importer extends WP_Importer {
 					$value = maybe_unserialize( $meta_item['value'] );
 				}
 
-				add_post_meta( $post_id, $key, $value );
+				add_post_meta( $post_id, wp_slash( $key ), wp_slash( $value ) );
 				do_action( 'import_post_meta', $post_id, $key, $value );
 
 				// if the post has a featured image, take note of this in case of remap
