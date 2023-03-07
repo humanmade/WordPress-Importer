@@ -48,3 +48,17 @@
 	line-height: 40px;
 	margin: 20px 0;
 }
+
+.welcome-panel
+.welcome-panel h2 {
+	color: #f2f2f2;
+}
+
+.welcome-panel h2 .notice {
+	color: #3c434a;
+}
+
+.welcome-panel-content {
+	padding: 0 15px;
+}
+	
