@@ -206,6 +206,12 @@ class WXR_Import_UI {
 	protected function display_author_step() {
 		if ( isset( $_REQUEST['id'] ) ) {
 			$err = $this->handle_select( wp_unslash( $_REQUEST['id'] ) );
+
+			$previous_import = get_post_meta( $this->id, '_importer_state', true );
+			if ( $previous_import instanceof WXR_Importer ) {
+				require __DIR__ . '/templates/resume-import.php';
+				return;
+			}
 		} else {
 			$err = $this->handle_upload();
 		}
@@ -409,9 +415,6 @@ class WXR_Import_UI {
 		$settings = compact( 'mapping', 'fetch_attachments' );
 		update_post_meta( $this->id, '_wxr_import_settings', $settings );
 
-		// Time to run the import!
-		set_time_limit( 0 );
-
 		// Ensure we're not buffered.
 		wp_ob_end_flush_all();
 		flush();
@@ -464,12 +467,22 @@ class WXR_Import_UI {
 		$mapping = $settings['mapping'];
 		$this->fetch_attachments = (bool) $settings['fetch_attachments'];
 
-		$importer = $this->get_importer();
-		if ( ! empty( $mapping['mapping'] ) ) {
-			$importer->set_user_mapping( $mapping['mapping'] );
-		}
-		if ( ! empty( $mapping['slug_overrides'] ) ) {
-			$importer->set_user_slug_overrides( $mapping['slug_overrides'] );
+		// Try to restore the importer from a previous run.
+		$importer = get_post_meta( $this->id, '_importer_state', true );
+
+		if ( ! $importer instanceof WXR_Importer ) {
+			$importer = $this->get_importer();
+			if ( ! empty( $mapping['mapping'] ) ) {
+				$importer->set_user_mapping( $mapping['mapping'] );
+			}
+			if ( ! empty( $mapping['slug_overrides'] ) ) {
+				$importer->set_user_slug_overrides( $mapping['slug_overrides'] );
+			}
+		} else {
+			$this->emit_sse_message( array(
+				'action' => 'resumed',
+				'node' => $importer->current_node,
+			) );
 		}
 
 		// Are we allowed to create users?
@@ -497,10 +510,18 @@ class WXR_Import_UI {
 		flush();
 
 		$file = get_attached_file( $this->id );
+		// Register a shutdown function to save the state of the importer
+		// if it didn't complete yet.
+		$this->completed = false;
+		$this->importer = $importer;
+		register_shutdown_function( array( $this, 'pause_import' ) );
+
 		$err = $importer->import( $file );
+		$this->completed = true;
 
 		// Remove the settings to stop future reconnects.
 		delete_post_meta( $this->id, '_wxr_import_settings' );
+		delete_post_meta( $this->id, '_importer_state' );
 
 		// Let the browser know we're done.
 		$complete = array(
@@ -513,6 +534,23 @@ class WXR_Import_UI {
 
 		$this->emit_sse_message( $complete );
 		exit;
+	}
+
+	/**
+	 * Pause the importer.
+	 *
+	 * This is run on shutdown, to cause a pause and save of the import
+	 * progress if the importer did not complete yet.
+	 */
+	public function pause_import() {
+		if ( true === $this->completed ) {
+			return;
+		}
+		update_post_meta( $this->id, '_importer_state', $this->importer );
+		$this->emit_sse_message( array(
+			'action' => 'paused',
+			'node' => $importer->current_node,
+		) );
 	}
 
 	/**
