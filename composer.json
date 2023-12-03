@@ -27,7 +27,7 @@
 	},
 	"require-dev": {
 		"wp-coding-standards/wpcs": "dev-master",
-		"squizlabs/php_codesniffer": "~2.9",
+		"phpcsstandards/php_codesniffer": "~2.9",
 		"fig-r/psr2r-sniffer": "~0.4"
 	},
 	"autoload"          : { },
